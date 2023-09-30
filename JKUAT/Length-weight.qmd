@@ -1,0 +1,96 @@
+---
+title: "Length Weight Relationship"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+## Data
+
+```{r}
+library(rio)
+library(tidyverse)
+library(showtext)
+library(gt)
+library(gtsummary)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+showtext_opts(dpi = 200)
+
+Data <- import_list("Data/BUKANI-JKUAT DATA.xlsx")
+Length <- Data$LENGTH |> mutate(param = "Length")
+Weight <- Data$WEIGHT|> mutate(param = "Weight") |> 
+  rename("T0" = "T1")
+
+Length_weight <- bind_rows(Length, Weight) |> 
+  mutate(Month = month(DATE, label = T)) |> 
+  pivot_longer(cols = 3:7, names_to = "Treatment", values_to = "Measure")
+```
+
+## Weight
+
+```{r}
+Length_weight |> filter(param == "Weight") |> 
+  ggplot(aes(Month, Measure, col = Treatment, group = Treatment)) +
+  stat_summary(fun.data = "mean_se", geom = "line", linewidth = 1) +
+  stat_summary(fun.data = "mean_se") + theme_bw() +
+  theme(legend.position = c(0.8,0.3),
+        text = element_text(family = "Noto serif")) +
+  labs(y = "Weight (g)")
+  
+```
+
+## Length
+
+```{r}
+Length_weight |> filter(param == "Length") |> 
+  ggplot(aes(Month, Measure, col = Treatment, group = Treatment)) +
+  stat_summary(fun.data = "mean_se", geom = "line", linewidth = 1) +
+  stat_summary(fun.data = "mean_se") + theme_bw() +
+  theme(legend.position = c(0.8,0.3),
+        text = element_text(family = "Noto serif")) +
+  labs(y = "Length (cm)")
+```
+
+## The length weight relationship
+
+```{r}
+Length_weight |> 
+  select(param, Treatment, Measure) |>
+  pivot_wider(names_from = param, values_from = Measure,
+              values_fn = list) |>
+  unnest(cols = c(Length, Weight)) |> 
+  filter(Length < 30) |> 
+  ggplot(aes(Length, Weight, col = Treatment)) + geom_point() +
+  geom_smooth() + theme_bw() +
+  theme(legend.position = c(0.8,0.3),
+        text = element_text(family = "Noto serif"))
+```
+
+## Growth Parameter
+
+```{r}
+Weights <- bind_rows(Length_weight |> 
+  filter(SAMP == "INITIAL",
+         param == "Weight"),
+Length_weight |> 
+  filter(SAMP == "FINAL",
+         param == "Weight"))
+
+Weights  |> 
+  select(SAMP, Treatment, Measure) |> 
+  pivot_wider(names_from = Treatment, values_from = Measure,
+              values_fn = list) |> 
+  unnest(cols = c(T0, T25, T50, T75, T100)) |> 
+  tbl_summary(by = SAMP,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ± {sd}",
+              missing = "no") |> 
+  modify_header(label = "Treatment")
+```
+
+

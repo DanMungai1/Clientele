@@ -1,0 +1,63 @@
+---
+title: "Performance of Growth Parameters"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(rio)
+library(tidyverse)
+library(gt)
+library(gtsummary)
+
+Data <- import_list("Data/DATA.xlsx")
+Feed <- Data$`FEED INTAKE`
+```
+
+```{r}
+Feed |> 
+  mutate(TREATMENT = as_factor(TREATMENT)) |> 
+  group_by(TREATMENT) |> 
+  summarise(Initial_Length_mean = round(mean(Initial_Length),3),
+            Final_Length_mean  = round(mean(Final_Length),3),
+            Initial_Weight_mean  = round(mean(Initial_Weight),3),
+            Final_Weight_mean  = round(mean(Final_Weight),3),
+            Initial_Length_sd = round(sd(Initial_Length),3),
+            Final_Length_sd = round(sd(Final_Length),3),
+            Initial_Weight_sd = round(sd(Initial_Weight),3),
+            Final_Weight_sd = round(sd(Final_Weight),3),
+            Weight_gain_mean = round(mean(Final_Weight) - mean(Initial_Weight),3),
+            Weight_gain_sd = round(sd(Final_Weight) - sd(Initial_Weight),3),
+            Daily_weight_gain_mean = round(Weight_gain_mean/168,3),
+            Daily_weight_gain_sd = round(Weight_gain_sd/168,3),
+            Relative_weight_gain_mean = round((Weight_gain_mean/Initial_Weight_mean)*100,3),
+            Relative_weight_gain_sd = round((Weight_gain_sd/Initial_Weight_sd),3),
+            Instantaneous_weight_gain_mean = round(((log10(Final_Weight_mean) - log10(Initial_Weight_mean))/168),3),
+            Instantaneous_weight_gain_sd = round(((log10(Final_Weight_sd) - log10(Initial_Weight_sd))/168),3),
+            Specific_growth_rate_mean = round(Instantaneous_weight_gain_mean *100,3),
+            Specific_growth_rate_sd = round(Instantaneous_weight_gain_sd *100,3),
+            Feed_conversion_ratio_mean = round(mean(Feed)/(Weight_gain_mean*1000),3),
+            Feed_conversion_ratio_sd = round(sd(Feed)/(Weight_gain_sd*1000),3)) |> 
+  unite("Initial_Length",Initial_Length_mean, Initial_Length_sd, sep = "±") |> 
+  unite("Final_Length",Final_Length_mean, Final_Length_sd, sep = "±") |> 
+  unite("Initial_Weight",Initial_Weight_mean, Initial_Weight_sd, sep = "±") |> 
+  unite("Final_Weight",Final_Weight_mean, Final_Weight_sd, sep = "±") |> 
+  unite("Weight_gain",Weight_gain_mean, Weight_gain_sd, sep = "±") |> 
+  unite("Daily_weight_gain",Daily_weight_gain_mean, Daily_weight_gain_sd, sep = "±") |> 
+  unite("Relative_weight_gain",Relative_weight_gain_mean, Relative_weight_gain_sd, sep = "±") |> 
+  unite("Instantaneous_growth_rate",Instantaneous_weight_gain_mean, Instantaneous_weight_gain_sd, sep = "±") |> 
+  unite("Specific_growth_rate",Specific_growth_rate_mean, Specific_growth_rate_sd, sep = "±") |> 
+  unite("Feed_conversion_ratio",Feed_conversion_ratio_mean, Feed_conversion_ratio_sd, sep = "±") |> 
+  pivot_longer(cols = -1) |> 
+  pivot_wider(names_from = TREATMENT, values_from = value) |> 
+  relocate(T0, .before = T25) |> 
+  relocate(T100, .after = T75) |> gt()
+  
+
+```
+

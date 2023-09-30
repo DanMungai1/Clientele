@@ -1,0 +1,42 @@
+---
+title: "Diversity Indices"
+author: "Wambua"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+```{r}
+library(readxl)
+library(vegan)
+library(tidyverse)
+food_plants <- read_excel("Wet and dry season  food plants species.xlsx", 
+    sheet = "Dry")
+library(gt)
+```
+
+## Species Diverisy
+```{r}
+diversity_data <- food_plants %>% 
+  pivot_wider(names_from = Species, values_from = Plants, values_fill = 0) %>% 
+  select(-1)
+
+shannon <- diversity(diversity_data, index = "shannon") %>% as_tibble() %>% 
+  mutate(Season = c("Dry", "Wet")) %>% 
+  rename(Shannon = value)
+
+simpson <- diversity(diversity_data, index = "simpson") %>% as_tibble() %>% 
+  mutate(Season = c("Dry", "Wet")) %>% 
+  rename(Simpson = value)
+
+Inv_simpson <- diversity(diversity_data, index = "inv") %>% as_tibble() %>% 
+  mutate(Season = c("Dry", "Wet")) %>% 
+  rename(Inv_Simpson = value)
+
+shannon %>% left_join(simpson) %>% left_join(Inv_simpson) %>% 
+  select(Season, everything()) %>% gt()
+```
+

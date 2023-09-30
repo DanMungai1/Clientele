@@ -1,0 +1,243 @@
+---
+title: "Jkuat Work"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+## Data
+
+```{r}
+library(rio)
+library(gt)
+library(gtsummary)
+library(tidyverse)
+library(lubridate)
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+Data <- import_list("BUKANI-JKUAT DATA.xlsx")
+
+water_quality <- Data$`WATER QUALITY` |> 
+  mutate(Month = month(Date, label =T),
+         Month = as_factor(Month))
+```
+
+## Summary Statistics for water quality
+
+```{r}
+water_quality |> select(-Date, -Month) |> 
+  tbl_summary(by = Period,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} + {sd}",
+              missing = "no") 
+  
+```
+
+### Water Quality across sampling Months
+
+```{r}
+water_quality  |>
+  select(-c(Period, Date)) |>  
+  tbl_summary(by = Month,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} + {sd}",
+              missing = "no") 
+```
+
+## Plots
+
+##### Physiochemical parameters across sampling months
+
+```{r}
+p <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  ggplot(aes(Month, value)) + stat_summary(fun.data = "mean_se") +
+  stat_summary(fun.data = "mean_se", geom = "line", group = 1) +
+  facet_wrap(~name, scales = "free_y") +
+  theme_bw() +
+  labs(y = "Physiochemical Measurements") +
+  theme(text = element_text(family = "Noto serif", size = 30))
+p
+ggsave("Phsiochemical-parameters.jpg", p, dpi = 300, width = 12, height = 6)
+```
+
+## Bar Graphs
+
+```{r}
+p1 <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  ggplot(aes(Month, value)) + stat_summary(fun.data = "mean_se", geom = "bar") +
+  stat_summary(fun.data = "mean_se", geom = "errorbar") +
+  facet_wrap(~name, scales = "free_y") +
+  theme_bw() +
+  labs(y = "Physiochemical Measurements") +
+  theme(text = element_text(family = "Noto serif", size = 20))
+
+p1
+
+ggsave("Bars.jpg", p1, dpi = 200, width = 10, height = 5)
+```
+
+## Stacked bar charts
+
+```{r}
+p2 <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  ggplot(aes(Month, value, fill = Period)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "fill") +
+  stat_summary(fun.data = "mean_se", geom = "errorbar", position = "fill") +
+  facet_wrap(~name, scales = "free_y") +theme_bw()+
+  labs(y = "Physiochemical Measurements") +
+  theme(legend.position = "bottom",
+        text = element_text(family = "Noto serif", size = 30))
+p2
+
+ggsave("stackedBars.jpg", p2, dpi = 250, width = 10, height = 5)
+```
+
+## Dodged bar charts
+
+```{r}
+p3 <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  ggplot(aes(Month, value, fill = Period)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "dodge") +
+  stat_summary(fun.data = "mean_se", geom = "errorbar", position = "dodge") +
+  facet_wrap(~name, scales = "free_y") + theme_bw()+
+  labs(y = "Physiochemical Measurements") +
+  theme(text = element_text(family = "Noto serif", size = 20),
+        legend.position = "bottom")
+p3
+
+ggsave("dodgedBars.jpg", p3, dpi = 200, width = 10, height = 5)
+```
+
+### Temperature Dodged
+
+```{r}
+p4 <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  filter(name == "Temp") |> 
+  ggplot(aes(Month, value, fill = Period)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "dodge") +
+  stat_summary(fun.data = "mean_se", geom = "errorbar", position = "dodge") + 
+  theme_bw()+
+  labs(y = expression(Temperature~(0~C))) +
+  theme(text = element_text(family = "Noto serif", size = 30),
+        legend.position = "bottom")
+p4
+
+ggsave("TemperatureDodgedBars.jpg", p4, dpi = 200, width = 10, height = 5)
+```
+
+Temperature stacked
+
+```{r}
+p5 <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  filter(name == "Temp") |> 
+  ggplot(aes(Month, value, fill = Period)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "fill") +
+  stat_summary(fun.data = "mean_se", geom = "errorbar", position = "fill") + 
+  theme_bw()+
+  labs(y = expression(Temperature~(0~C))) +
+  theme(text = element_text(family = "Noto serif", size = 40),
+        legend.position = "bottom")
+p5
+
+ggsave("TemperaturestackedBars.jpg", p5, dpi = 200, width = 10, height = 5)
+```
+
+Just Temperature
+
+```{r}
+p6 <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  filter(name == "Temp") |> 
+  ggplot(aes(Month, value, group = 1)) +
+  stat_summary(fun.data = "mean_se") + 
+  stat_summary(fun.data = "mean_se", geom = "line")+
+  theme_bw()+
+  labs(y = expression(Temperature~(0~C))) +
+  theme(text = element_text(family = "Noto serif", size = 50),
+        legend.position = "bottom")
+
+p6
+ggsave("Temperature.jpg", p6, dpi = 200, width = 10, height = 5)
+```
+
+# pH
+```{r}
+ph <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  filter(name == "PH") |> 
+  ggplot(aes(Month, value)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "dodge") +
+  stat_summary(fun.data = "mean_se", geom = "errorbar", position = "dodge") + 
+  theme_bw()+
+  labs(y = "pH") +
+  theme(text = element_text(family = "Noto serif", size = 40),
+        legend.position = "bottom")
+
+ph
+
+ggsave("pH.jpg", ph, dpi = 250, width = 10, height = 5)
+```
+
+##pH period
+```{r}
+ph1 <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  filter(name == "PH") |> 
+  ggplot(aes(Month, value, fill = Period)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "fill")  + 
+  theme_bw()+
+  labs(y = "pH") +
+  theme(text = element_text(family = "Noto serif", size = 40),
+        legend.position = "bottom")
+
+ph1
+
+ggsave("pHP.jpg", ph1, dpi = 250, width = 10, height = 5)
+```
+
+# Dissolved oxygen
+```{r}
+do <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  filter(name == "D.O") |> 
+  ggplot(aes(Month, value, fill = Period)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "fill")  + 
+  theme_bw()+
+  labs(y = "Dissolved Oxygen") +
+  theme(text = element_text(family = "Noto serif", size = 40),
+        legend.position = "bottom")
+
+do
+
+ggsave("DO.jpg", do, dpi = 250, width = 7, height = 4)
+```
+
+## DO
+```{r}
+Do <- water_quality |> 
+  pivot_longer(cols = 3:8) |> 
+  filter(name == "D.O") |> 
+  ggplot(aes(Month, value)) +
+  stat_summary(fun.data = "mean_se", geom = "bar", position = "dodge")  + 
+  stat_summary(fun.data = "mean_se", geom = "errorbar", position = "dodge")+
+  theme_bw()+
+  labs(y = "Dissolved Oxygen") +
+  theme(text = element_text(family = "Noto serif", size = 40),
+        legend.position = "bottom")
+
+Do
+
+ggsave("dissolved.jpg", Do, dpi = 250, width = 7, height = 4)
+```
+

@@ -1,0 +1,79 @@
+---
+title: "Performance of Growth Parameters"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(rio)
+library(tidyverse)
+library(gt)
+library(gtsummary)
+
+Feed <- import("Data/growth parameters.xlsx")
+```
+
+```{r}
+Feed <- Feed |> 
+  mutate(Weight_gain = Final_Weight - Initial_Weight,
+         Length_gain = Final_Length- Initial_Length,
+         PWG = 100*(Weight_gain/Initial_Weight),
+         DWG = (Weight_gain/168)/30,
+         SGR = 100*((log10(Final_Weight) - log10(Initial_Weight))/168),
+         FCR = (Feed/Weight_gain))
+
+Feed |> select(-1) |> 
+  mutate(TREATMENT = fct_relevel(TREATMENT, 
+                                 c("T0", "T25","T50","T75", "T100"))) |> 
+  tbl_summary(by = TREATMENT,
+              statistic = everything() ~ "{mean} ± {sd}") |> 
+  add_p(test = everything() ~ "aov")
+```
+
+## Post Hoc Analysis
+```{r}
+## Initial Length
+aov(Initial_Length ~ TREATMENT, data = Feed)
+summary(aov(Initial_Length ~ TREATMENT, data = Feed))
+## Final Length
+aov(Final_Length ~ TREATMENT, data = Feed)
+summary(aov(Final_Length ~ TREATMENT, data = Feed))
+## Length gain
+aov(Length_gain ~ TREATMENT, data = Feed)
+summary(aov(Length_gain ~ TREATMENT, data = Feed))
+TukeyHSD(aov(Length_gain ~ TREATMENT, data = Feed))
+plot(TukeyHSD(aov(Length_gain ~ TREATMENT, data = Feed)))
+## Weight gain
+aov(Weight_gain ~ TREATMENT, data = Feed)
+summary(aov(Weight_gain ~ TREATMENT, data = Feed))
+TukeyHSD(aov(Weight_gain ~ TREATMENT, data = Feed))
+plot(TukeyHSD(aov(Weight_gain ~ TREATMENT, data = Feed)))
+## Percent Growth Rate
+aov(PWG ~ TREATMENT, data = Feed)
+summary(aov(PWG ~ TREATMENT, data = Feed))
+TukeyHSD(aov(PWG ~ TREATMENT, data = Feed))
+plot(TukeyHSD(aov(PWG ~ TREATMENT, data = Feed)))
+## Daily Growth Rate
+aov(DWG ~ TREATMENT, data = Feed)
+summary(aov(DWG ~ TREATMENT, data = Feed))
+TukeyHSD(aov(DWG ~ TREATMENT, data = Feed))
+plot(TukeyHSD(aov(DWG ~ TREATMENT, data = Feed)))
+## Specific Growth rate
+## Length gain
+aov(SGR ~ TREATMENT, data = Feed)
+summary(aov(SGR ~ TREATMENT, data = Feed))
+TukeyHSD(aov(SGR ~ TREATMENT, data = Feed))
+plot(TukeyHSD(aov(SGR ~ TREATMENT, data = Feed)))
+## Feed Conversion Ratio
+## Length gain
+aov(FCR ~ TREATMENT, data = Feed)
+summary(aov(FCR ~ TREATMENT, data = Feed))
+TukeyHSD(aov(FCR ~ TREATMENT, data = Feed))
+plot(TukeyHSD(aov(FCR ~ TREATMENT, data = Feed)))
+```
+

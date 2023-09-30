@@ -1,0 +1,67 @@
+---
+title: "Growth Performance"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+## Data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(gt)
+Growth <- read_excel("Data/Growth.xlsx")
+```
+
+## Summary
+
+```{r}
+
+Growth  |> 
+  mutate(Treatment = as_factor(Treatment)) |> tbl_summary(by = Treatment,
+                      type = everything() ~ "continuous",
+                      statistic = all_continuous() ~ "{mean} ± {sd}") |> 
+  modify_header(label = "Parameters") |> as_gt()
+```
+
+## Growth performance
+
+```{r}
+Growth_performance <- Growth |> 
+  mutate(Treatment = as_factor(Treatment)) |> 
+  group_by(Treatment) |> 
+  summarise(Initial_Weight = round(mean(Initial),3),
+            Initial_weight_sd = round(sd(Initial),3),
+            Final_Weight = round(mean(Final, na.rm = T),3),
+            Final_weight_sd = round(sd(Final, na.rm = T),3),
+            Weight_gain = Final_Weight - Initial_Weight,
+            Weight_gain_sd = Final_weight_sd - Initial_weight_sd,
+            Average_growth_rate = round((Final_Weight - Initial_Weight)/168,3),
+            Average_growth_rate_sd = round((Final_weight_sd - Initial_weight_sd)/168,3),
+            Relative_growth_rate = round(((Final_Weight - Initial_Weight)/Initial_Weight)*100,3),
+            Instantaneous_growth_rate = round((log10(Final_Weight) - log10(Initial_Weight))/168,3),
+            Specific_growth_rate = round(((log10(Final_Weight) - log10(Initial_Weight))/168)*100,3),
+            Relative_growth_rate_sd = round(((Final_weight_sd - Initial_weight_sd)/Initial_weight_sd),3),
+            Instantaneous_growth_rate_sd = round((log10(Final_weight_sd) - log10(Initial_weight_sd))/168,3),
+            Specific_growth_rate_sd = Instantaneous_growth_rate*100,
+            Feed_conversion_ratio = round((mean(Feed)/Weight_gain)/1000,3),
+            Feed_conversion_ratio_sd = round((sd(Feed)/Weight_gain_sd)/1000,3))
+
+Growth_performance |> 
+  unite("Initial_weight", Initial_Weight,Initial_weight_sd, sep = "±") |> 
+  unite("Final_weight", Final_Weight,Final_weight_sd, sep = "±") |> 
+  unite("Weight_gain", Weight_gain,Weight_gain_sd, sep = "±") |> 
+  unite("Average_growth_rate", Average_growth_rate,Average_growth_rate_sd, sep = "±") |> 
+  unite("Relative_growth_rate", Relative_growth_rate,Relative_growth_rate_sd, sep = "±")|> 
+  unite("Instantaneous_growth_rate", Instantaneous_growth_rate,Instantaneous_growth_rate_sd, sep = "±")|> 
+  unite("Specific_growth_rate", Specific_growth_rate,Specific_growth_rate_sd, sep = "±")|> 
+  unite("Feed_conversion_ratio", Feed_conversion_ratio,Feed_conversion_ratio_sd, sep = "±") |> 
+  pivot_longer(cols = -1) |> 
+  pivot_wider(names_from = Treatment, values_from = value) |> gt()
+```
