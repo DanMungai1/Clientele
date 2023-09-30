@@ -1,0 +1,145 @@
+---
+title: "Insurance Models"
+author: "Kuei"
+format: pptx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+fig-width: 9
+fig-height: 5
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(gtsummary)
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+Data <- read_excel("Insurance.xlsx") %>% 
+  mutate(Age = fct_relevel(Age, c("Below 30 years", "30 - 39 years",
+                                  "40 - 49 years", "Over 50 years")),
+         `Level of Education`  = fct_relevel(`Level of Education`, c("Secondary","Diploma", 
+                                                                     "Bachelor's", "Postgraduate")),
+         `Working Period` = fct_relevel(`Working Period`, c("Less than 1 year", "1 - 5 years",
+                                                            "6 - 10 years", "over 10 years")),
+         `Company Operation Period` = fct_relevel(`Company Operation Period`, c("Less than 5 years",
+                                                                                "5 - 10 years",
+                                                                                "Over 10 years")))
+```
+
+# Social Demographics
+
+## Demographics summary
+
+```{r}
+Data %>% select(1:5) %>% 
+  tbl_summary() %>% 
+  modify_header(label = "**Social Demographics**",
+                stat_0 = "**Frequency (%)**")
+```
+
+## Gender
+
+```{r}
+plot_demos <- function(var) {
+  Data %>% 
+  ggplot(aes({{var}})) + geom_bar(stat = "count") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(y = "Respondents")
+}
+
+plot_demos(Gender)
+```
+
+## Age
+
+```{r}
+plot_demos(Age) 
+```
+
+## Level of education
+
+```{r}
+plot_demos(`Level of Education`) 
+```
+
+## Occupation
+
+```{r}
+plot_demos(Occupation) 
+```
+
+## Working Period
+
+```{r}
+plot_demos(`Working Period`) 
+```
+
+## Company Operation Period
+
+```{r}
+plot_demos(`Company Operation Period`) 
+```
+
+
+
+## Overall Model
+
+```{r}
+library(performance)
+model <- lm(`Financial Performance` ~ `Financial innovation` + `Longterm Investment` +
+              `Equity Investment` + `Asset Base` + Gender + Age + `Working Period` + `Company Operation Period` + `Level of Education` + Occupation, data = Data)
+
+summary(model)
+tbl_regression(model)
+check_model(model)
+model_performance(model) %>% gt()
+```
+
+# Objective 1: The effect of financial innovations on financial performance
+
+```{r}
+model_1 <- lm(`Financial Performance` ~ `Financial innovation`, data = Data)
+
+summary(model_1)
+tbl_regression(model_1)
+check_model(model_1)
+model_performance(model_1) %>% gt()
+```
+
+# Objective 2: The effect of long- term investment on financial performance
+
+```{r}
+model_2 <- lm(`Financial Performance` ~ `Longterm Investment`, data = Data)
+
+summary(model_2)
+tbl_regression(model_2)
+check_model(model_2)
+model_performance(model_2) %>% gt()
+```
+
+#Objective 3: The relationship between equity investment and financial performance
+
+```{r}
+model_3 <- lm(`Financial Performance` ~  `Equity Investment`, data = Data)
+
+summary(model_3)
+tbl_regression(model_3)
+check_model(model_3)
+model_performance(model_3) %>% gt()
+```
+# Objective 4 :The moderating effect of asset base relationship between financial management determinants and performance
+
+```{r}
+model_4 <- lm(`Financial Performance` ~  `Financial innovation`*`Asset Base` +
+                `Longterm Investment`*`Asset Base` +
+                `Equity Investment`*`Asset Base`, data = Data)
+
+summary(model_4)
+tbl_regression(model_4)
+check_model(model_4)
+anova(model_4) %>% gt()
+model_performance(model_4) %>% gt()
+```
