@@ -1,0 +1,63 @@
+---
+title: "Juv"
+author: "Lena"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+## Data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(scales)
+juv <- read_excel("juv.xlsx")
+
+```
+
+## Style
+
+```{r}
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+```
+
+## Wrangle
+
+```{r}
+Juv <- juv %>% 
+  mutate(site = case_when(Effort == 1 ~ "SBE4",
+                          Effort == 2 ~ "SBE3",
+                          Effort == 3 ~ "SBE2",
+                          Effort == 4 ~ "SBE1"),
+         Species = case_when(str_detect(Species, "be") ~ "Anguilla bengalensis",
+                             str_detect(Species, "mar") ~ "Anguilla marmorata",
+                             .default = "Anguilla mossambica"))
+```
+
+## Sites
+
+```{r}
+Juv %>% 
+  count(`Local name)`, site, Species, sort = T) %>% 
+  ggplot(aes(Species, n, col = `Local name)`)) + stat_summary(size = 3) +
+  facet_wrap(~site, scales = "free_y") +
+  labs(col = "Life Stage", y = "Species Counts") +
+  theme_bw(base_family = "Noto serif", base_size = 29) +
+  scale_x_discrete(labels = label_wrap(10))
+```
+
+## Size
+
+```{r}
+Juv %>% 
+  select(`Local name)`, site, Species, `TL (cm)`) %>% 
+  ggplot(aes(Species, `TL (cm)`, col = `Local name)`)) +
+  stat_summary(fun.data = "mean_se", size = 3) + facet_wrap(~site, scales = "free_y") +
+  labs(col = "Life Stage") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  scale_x_discrete(labels = label_wrap(10))
+```

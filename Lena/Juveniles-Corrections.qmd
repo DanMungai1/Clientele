@@ -1,0 +1,215 @@
+---
+title: "Juvenile Anguillid Corrections"
+author: "Lena"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(gt)
+library(readxl)
+library(glue)
+library(RColorBrewer)
+library(showtext)
+library(janitor)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+Anguillids <- read_excel("Juvenile Anguillid.xlsx", 
+    sheet = "Combined Juveniles") |> janitor::clean_names() |> 
+  select(-c(effort))
+
+Juvenile <- read_excel("Juvenile Anguillid.xlsx", 
+    sheet = " Juvenile Only") |> 
+  mutate(Season = if_else(str_detect(Season, "Wet"), "Wet", "Dry"),
+         Total_Length = `TL (cm)` *10,
+         `DG (cm)` = `DG (cm)` *10,
+         Species = case_when(str_detect(Species, "benga") ~ "Anguilla bengalensis",
+                             str_detect(Species, "mos") ~ "Anguilla mossambica",
+                             .default = "Anguilla marmorata"),
+         Month = str_to_sentence(Month)) |> 
+  select(-c(Effort, Technique, `TL (cm)`)) |> 
+  janitor::clean_names()
+```
+## All anguillids
+```{r}
+Anguillids |> 
+  summarise(total_number = sum(n, na.rm = T),
+            across(
+              .cols = c(total_length_cm:weight_g),
+              ~ mean(.,na.rm = T)),
+            .by = c(family, species)) |> 
+  gt(rowname_col = "species",
+     groupname_col = "family") |> 
+  tab_spanner(label = "Morphometric Measurements",
+              columns = c(total_number:weight_g))
+```
+
+
+
+
+## Morphometrics
+```{r}
+Juvenile |> 
+  select(where(is.numeric), species) |> 
+  select(total_length, everything()) |> 
+  tbl_summary(by = species,
+              statistic = everything() ~ "{mean} ± {sd}") |> 
+  add_p()
+```
+
+## Elvers Morhometrty
+```{r}
+Juvenile |> 
+  select(where(is.numeric), species, local_name) |> 
+  filter(local_name == "Elver") |> 
+  select(total_length, everything(), -local_name) |> 
+  tbl_summary(by = species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ± {sd}") |> 
+  add_p()
+```
+
+## Glass Eels Morhometrty
+```{r}
+Juvenile |> 
+  select(where(is.numeric), species, local_name) |> 
+  filter(local_name == "Glass eel") |> 
+  select(total_length, everything(), -local_name) |> 
+  tbl_summary(by = species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ± {sd}") |> 
+  add_p()
+```
+
+## Anguillids across seasons
+```{r}
+Juvenile |> 
+  select(season, species) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+
+
+## Elvers Across Seasons
+```{r}
+Juvenile |> 
+  select(local_name, season, species) |> 
+  filter(local_name == "Elver")|> 
+  select(-local_name) |> 
+  tbl_cross(percent = "row")
+```
+
+
+## Glass Eels Across Seasons
+```{r}
+Juvenile |> 
+  select(local_name, season, species) |> 
+  filter(local_name == "Glass eel")|> 
+  select(-local_name) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+
+# Phases of the moon
+## Anguillids across moon phase
+```{r}
+Juvenile |> 
+  select(moon_phase, species) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+
+
+## Elvers Across moon phase
+```{r}
+Juvenile |> 
+  select(local_name, moon_phase,species) |> 
+  filter(local_name == "Elver")|> 
+  select(-local_name) |> 
+  tbl_cross(percent = "row")
+```
+
+
+## Glass Eels Across moon phase
+```{r}
+Juvenile |> 
+  select(local_name, moon_phase,species) |> 
+  filter(local_name == "Glass eel")|> 
+  select(-local_name) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+
+# Temporal Distribution
+```{r}
+Juvenile |> select(month, species) |> 
+  mutate(month = fct_relevel(month, 
+                             c("July", "August", "September", "October", "November"))) |> 
+  tbl_cross(percent = "row") |> add_p()
+  
+```
+
+## Tempral Distribution of elvers
+```{r}
+Juvenile |> select(month, local_name, species) |> 
+  filter(local_name == "Elver") |> 
+  select(-local_name) |> 
+  tbl_cross(percent = "row")
+```
+
+
+## Tempral Distribution of glass eels
+```{r}
+Juvenile |> select(month, local_name, species) |> 
+  filter(local_name == "Glass eel") |> 
+  select(-local_name) |> 
+  mutate(month = fct_relevel(month, 
+                             c("July", "August", "September", "October", "November"))) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+
+## Juveniles Plot
+```{r}
+Juvenile |> 
+  count(species, local_name) |> 
+  ggplot(aes(local_name, n, fill = species)) + geom_col(position = "dodge") +
+  scale_fill_brewer(palette = "Set1") +
+  labs(x = "Juvenile Stage", y = "Juvenile Counts") +
+  theme_bw(base_family = "Noto serif", base_size = 20) +
+  theme(legend.position = c(0.8, 0.8)) 
+```
+## Biotopes
+```{r}
+Juvenile |> select(biotope, species) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+
+## EELS BIOTOPES
+```{r}
+Juvenile |> select(biotope, local_name, species) |> 
+  filter(local_name == "Glass eel") |> 
+  select(-local_name) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+
+## elvers BIOTOPES
+```{r}
+Juvenile |> select(biotope, local_name, species) |> 
+  filter(local_name == "Elver") |> 
+  select(-local_name) |> 
+  tbl_cross(percent = "row") |> add_p()
+```
+## Catch Per Unit Effort
+```{r}
+Juvenile |> 
+  mutate(date = convert_to_date(date, character_fun = lubridate::dmy)) |> 
+  count(local_name,species) |> 
+  pivot_wider(names_from = local_name, values_from = n) |> 
+  mutate(Total = Elver + `Glass eel`) |> gt()
+```
+
+

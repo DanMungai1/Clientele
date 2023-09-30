@@ -1,0 +1,32 @@
+---
+title: "Discharge"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(glue)
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(rio)
+Data <- import_list("ENVIRONMENTAL.xlsx")
+
+species <- Data$Sheet2
+discharge <- Data$Sheet1
+
+species |> select(-1)
+data <- discharge |>
+  select(`Sampling location`, `Discharge (m3/s)`) |> 
+  left_join(species, join_by(`Sampling location`==`Sampling site`))
+```
+
+## Discharge
+
+```{r}
+data |> select(Species, `Discharge (m3/s)`) |> 
+  tbl_summary(by = Species,
+              statistic = `Discharge (m3/s)` ~ "{mean}") |> add_p() |> as_gt()
+```

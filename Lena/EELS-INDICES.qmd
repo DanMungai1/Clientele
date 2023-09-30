@@ -1,0 +1,190 @@
+---
+title: "Indices"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+juv <- read_excel("juv.xlsx")
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+library(gt)
+library(gtsummary)
+```
+
+## Wrangle
+
+```{r}
+Juv <- juv %>% 
+  mutate(site = case_when(Effort == 1 ~ "SBE4",
+                          Effort == 2 ~ "SBE3",
+                          Effort == 3 ~ "SBE2",
+                          Effort == 4 ~ "SBE1"),
+         Species = case_when(str_detect(Species, "be") ~ "Anguilla bengalensis",
+                             str_detect(Species, "mar") ~ "Anguilla marmorata",
+                             .default = "Anguilla mossambica"),
+         `TL (mm)` = `TL (cm)`*10000,
+         `DG (mm)` = `DG (cm)` * 10000,
+         Season = if_else(Season == "Dry", "Dry", "Wet")) |> 
+  mutate(elongation_index = `TL (mm)`/`DF to AF (mm)`,
+         effort = 24,
+         LH = (`LH (mm)` + `LV (mm)`)/4,
+         RH = (`RH (mm)` + `RV (mm)`)/4,
+         LR = LH*RH,
+         PI = pi/`TL (mm)`,
+         OI = LR*PI*100)|> 
+  select(-c(`DG (cm)`,Effort, LH, RH, LR,PI)) 
+```
+
+## ELVERS elongation index
+
+```{r}
+Juv |> filter(`life stage` == "Elver") |> 
+  select(Species, elongation_index,`TL (mm)`,`DF to AF (mm)`) |> 
+  tbl_summary(by = Species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p()
+```
+
+## Glass eels elongation index
+
+```{r}
+Juv |> filter(`life stage` != "Elver") |> 
+  select(Species, elongation_index, `TL (mm)`,`DF to AF (mm)`) |> 
+  tbl_summary(by = Species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p()
+```
+
+## ELVERS Ocular index
+
+```{r}
+Juv |> filter(`life stage` == "Elver") |> 
+  select(Species, OI,`TL (mm)`,`DF to AF (mm)`) |> 
+  tbl_summary(by = Species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p()
+```
+
+## Glass eels Ocular index
+
+```{r}
+Juv |> filter(`life stage` != "Elver") |>
+  select(Species, OI,`TL (mm)`,`DF to AF (mm)`) |> 
+  tbl_summary(by = Species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p()
+```
+
+## Glass eels Indices Combined
+
+```{r}
+Juv |> filter(`life stage` != "Elver") |> 
+  select(Species, OI, elongation_index,`TL (mm)`,`DF to AF (mm)`) |> 
+  tbl_summary(by = Species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p()
+```
+
+## Elvers Indices Combined
+
+```{r}
+Juv |> filter(`life stage` == "Elver") |> 
+  select(Species, OI, elongation_index,`TL (mm)`,`DF to AF (mm)`) |> 
+  tbl_summary(by = Species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p()
+```
+
+## eels and indices combined
+
+```{r}
+Juv |> select(Species, OI, elongation_index,`TL (mm)`,`DF to AF (mm)`) |> 
+  tbl_summary(by = Species,
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p()
+```
+
+## Catch per unit Effort for elvers
+
+```{r}
+Juv |> filter(`life stage` == "Elver") |> 
+  count(site, Species) |> 
+  pivot_wider(names_from = Species, values_from = n, values_fill = 0) |> 
+  mutate(Mouth_distance = case_when(site == "SBE1" ~ "0.5KM",
+                                    site == "SBE2" ~ "1KM",
+                                    site == "SBE3" ~ "1.5KM",
+                                    site == "SBE4" ~ "2KM"),
+         `Anguilla mossambica` = `Anguilla mossambica`/24,
+         `Anguilla bengalensis` = `Anguilla bengalensis`/24) |> 
+  unite("site",site, Mouth_distance, sep = "-") |> gt()
+  
+```
+
+## Catch per unit Effort for glass eels
+
+```{r}
+Juv |> filter(`life stage` != "Elver") |> 
+  count(site, Species) |> 
+  pivot_wider(names_from = Species, values_from = n, values_fill = 0) |> 
+  mutate(Mouth_distance = case_when(site == "SBE1" ~ "0.5KM",
+                                    site == "SBE2" ~ "1KM",
+                                    site == "SBE3" ~ "1.5KM",
+                                    site == "SBE4" ~ "2KM"),
+         `Anguilla mossambica` = `Anguilla mossambica`/24,
+         `Anguilla bengalensis` = `Anguilla bengalensis`/24,
+         `Anguilla marmorata` = `Anguilla marmorata`/24) |> 
+  unite("site",site, Mouth_distance, sep = "-") |> gt()
+  
+```
+
+Overall catch per unit effort
+
+```{r}
+Juv  |> 
+  count(site, Species) |> 
+  pivot_wider(names_from = Species, values_from = n, values_fill = 0) |> 
+  mutate(Mouth_distance = case_when(site == "SBE1" ~ "0.5KM",
+                                    site == "SBE2" ~ "1KM",
+                                    site == "SBE3" ~ "1.5KM",
+                                    site == "SBE4" ~ "2KM"),
+         `Anguilla mossambica` = `Anguilla mossambica`/24,
+         `Anguilla bengalensis` = `Anguilla bengalensis`/24,
+         `Anguilla marmorata` = `Anguilla marmorata`/24) |> 
+  unite("site",site, Mouth_distance, sep = "-") |> gt()
+```
+
+## Species indices by site
+
+```{r}
+Juv |> 
+  summarise(elongation_index_mean = round(mean(elongation_index)),
+            ocular_index = round(mean(OI),2),
+            Total_length = round(mean(`TL (mm)`),2),
+            elongation_index_sd = round(sd(elongation_index),2),
+            ocular_index_sd = round(sd(OI),2),
+            Total_length_sd = round(sd(`TL (mm)`),2),
+            .by = c(Species, site)) |> 
+  select( Species, site,elongation_index_mean,elongation_index_sd,ocular_index,ocular_index_sd,Total_length,Total_length_sd) |> 
+  unite("elongation_index", elongation_index_mean:elongation_index_sd, sep = "+") |> 
+  unite("Ocular_index", ocular_index:ocular_index_sd, sep = "+") |> 
+  unite("Total_Length", Total_length,Total_length_sd, sep = "+") |> 
+  pivot_longer(cols = c(elongation_index:Total_Length), names_to = "index") |> 
+  pivot_wider(names_from = site, values_from = value) |> 
+  select(Species, index, SBE1, SBE2, SBE3, SBE4) |> gt()
+```

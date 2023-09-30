@@ -1,0 +1,345 @@
+---
+title: "Lena Corrections"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+fig-width: 11
+fig-height: 5
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(gtsummary)
+juv <- read_excel("juv.xlsx")
+
+combined <- read_excel("combined.xlsx")
+
+windowsFonts(times = windowsFont("Times New Roman"))
+
+Juv <- juv %>% 
+  mutate(site = case_when(Effort == 1 ~ "SBE4",
+                          Effort == 2 ~ "SBE3",
+                          Effort == 3 ~ "SBE2",
+                          Effort == 4 ~ "SBE1"),
+         Species = case_when(str_detect(Species, "be") ~ "Anguilla bengalensis",
+                             str_detect(Species, "mar") ~ "Anguilla marmorata",
+                             .default = "Anguilla mossambica"),
+         `TL (mm)` = `TL (cm)`*10000,
+         `DG (mm)` = `DG (cm)` * 10000,
+         Season = if_else(Season == "Dry", "Dry", "Wet")) |> 
+  mutate(elongation_index = `TL (mm)`/`DF to AF (mm)`,
+         effort = 24,
+         LH = (`LH (mm)` + `LV (mm)`)/4,
+         RH = (`RH (mm)` + `RV (mm)`)/4,
+         LR = LH*RH,
+         PI = pi/`TL (mm)`,
+         OI = LR*PI*100,
+         FDI = (0.25*`DF to AF (mm)`)/`TL (mm)`,
+         seasonality = if_else(str_detect(Month, "October|August|September|JULY"), "SEM", "NEM"))|> 
+  select(-c(`DG (cm)`,Effort, LH, RH, LR,PI)) |> 
+  mutate(Mouth_distance = case_when(site == "SBE1" ~ "0.5KM",
+                                    site == "SBE2" ~ "1KM",
+                                    site == "SBE3" ~ "1.5KM",
+                                    site == "SBE4" ~ "2KM"))
+```
+
+## Plot
+
+## OI
+
+```{r}
+Juv |> 
+  mutate(Mouth_distance  = fct_relevel(Mouth_distance, c("0.5KM", "1KM"))) |> 
+  ggplot(aes(Mouth_distance, OI, fill = Species)) + 
+  stat_summary(geom = "errorbar", position = "dodge", width =0.7) +
+  stat_summary(geom = "bar", position = "dodge", width = 0.7) +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.8, 0.8)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Location (km from mouth)", y ="Ocular index") +
+  facet_wrap(~`life stage`)
+  
+
+```
+
+## Elongation
+
+```{r}
+Juv |> 
+  mutate(Mouth_distance  = fct_relevel(Mouth_distance, c("0.5KM", "1KM"))) |> 
+  ggplot(aes(Mouth_distance, elongation_index, fill = Species)) + 
+  stat_summary(geom = "errorbar", position = "dodge", width =0.7) +
+  stat_summary(geom = "bar", position = "dodge", width = 0.7) +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.8, 0.8)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Location (km from mouth)", y ="Elongation index") +
+  facet_wrap(~`life stage`)
+```
+
+## Total lengh
+
+```{r}
+Juv |> 
+  mutate(Mouth_distance  = fct_relevel(Mouth_distance, c("0.5KM", "1KM"))) |> 
+  ggplot(aes(Mouth_distance,`TL (cm)` , fill = Species)) + 
+  stat_summary(geom = "errorbar", position = "dodge", width =0.7) +
+  stat_summary(geom = "bar", position = "dodge", width = 0.7) +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.8, 0.8)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Location (km from mouth)", y ="Total Length (cm)") +
+  facet_wrap(~`life stage`)
+```
+
+## Lunar phase
+
+## OI
+
+```{r}
+Juv |> 
+  ggplot(aes(`Moon Phase`, OI, fill = Species)) + 
+  stat_summary(geom = "errorbar", position = "dodge", width =0.7) +
+  stat_summary(geom = "bar", position = "dodge", width = 0.7) +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.2, 0.8)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Moon Phase", y ="Ocular index") +
+  facet_wrap(~`life stage`) +
+  scale_x_discrete(label = scales::label_wrap(5))
+```
+
+## Elongation
+
+```{r}
+Juv |> 
+  ggplot(aes(`Moon Phase`, elongation_index, fill = Species)) + 
+  stat_summary(geom = "errorbar", position = "dodge", width =0.7) +
+  stat_summary(geom = "bar", position = "dodge", width = 0.7) +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.2, 0.8)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Moon Phase", y ="Elongation Index") +
+  facet_wrap(~`life stage`) +
+  scale_x_discrete(label = scales::label_wrap(5))
+```
+
+## Total lengh
+
+```{r}
+Juv |> 
+  ggplot(aes(`Moon Phase`, `TL (cm)`, fill = Species)) + 
+  stat_summary(geom = "errorbar", position = "dodge", width =0.7) +
+  stat_summary(geom = "bar", position = "dodge", width = 0.7) +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.8, 0.8)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Moon Phase", y ="Total Length") +
+  facet_wrap(~`life stage`) +
+  scale_x_discrete(label = scales::label_wrap(5))
+```
+
+## Recruitment and phases of the moon (CPUE)
+
+### Glass eels
+
+```{r}
+Juv |> filter(`life stage` == "Glass eel") |> 
+  count(`Moon Phase`,Species, sort = T) |> 
+  mutate(CPUE = round(n/24,2)) |> select(-n) |> 
+  pivot_wider(names_from = Species, values_from = CPUE) |> gt()
+```
+
+### Elvers
+
+```{r}
+Juv |> filter(!`life stage` == "Glass eel") |> 
+  count(`Moon Phase`,Species, sort = T) |> 
+  mutate(CPUE = round(n/24,2)) |> select(-n) |> 
+  pivot_wider(names_from = Species, values_from = CPUE) |> gt()
+```
+
+## CPUE PLOT
+
+```{r}
+Juv |> 
+  count(`Moon Phase`, Mouth_distance,Species, sort = T) |> 
+  mutate(CPUE = round(n/24,2)) |> select(-n) |> 
+  mutate(Mouth_distance  = fct_relevel(Mouth_distance, c("0.5KM", "1KM"))) |> 
+  ggplot(aes(Mouth_distance, CPUE, group = Species, lty = Species, shape = Species)) + 
+  stat_summary(geom = "line") +
+  stat_summary(geom = "point") +
+  theme_classic(base_family = "times", base_size = 22) +
+  theme(legend.position = c(0.8, 0.8)) +
+  labs(x = "Location (distance from mouth km)", y = "CPUE (catch/trap/day)")
+```
+
+## cpue by life stage
+
+## CPUE PLOT
+
+```{r}
+Juv |> 
+  count(`Moon Phase`, `life stage`,Mouth_distance,Species, sort = T) |> 
+  mutate(CPUE = round(n/24,2)) |> select(-n) |> 
+  mutate(Mouth_distance  = fct_relevel(Mouth_distance, c("0.5KM", "1KM"))) |> 
+  ggplot(aes(Mouth_distance, CPUE, group = Species, lty = Species, shape = Species)) + 
+  stat_summary(geom = "line") +
+  stat_summary(geom = "point") +
+  theme_classic(base_family = "times", base_size = 22) +
+  theme(legend.position = c(0.3, 0.65)) +
+  labs(x = "Location (distance from mouth km)", y = "CPUE (catch/trap/day)") +
+  facet_wrap(~`life stage`)
+```
+
+## Total Length across distances
+
+```{r}
+Juv |> 
+  mutate(Mouth_distance  = fct_relevel(Mouth_distance, c("0.5KM", "1KM"))) |> 
+  ggplot(aes(Mouth_distance, `TL (cm)`, group = Species, lty = Species, shape = Species)) + 
+  stat_summary(geom = "line") +
+  stat_summary(geom = "point") +
+  theme_classic(base_family = "times", base_size = 22) +
+  theme(legend.position = c(0.8, 0.7)) +
+  labs(x = "Location (distance from mouth km)", y = "Total Length (cm)")
+```
+
+## Total Length across distances and life stage
+
+```{r}
+Juv |> 
+  mutate(Mouth_distance  = fct_relevel(Mouth_distance, c("0.5KM", "1KM"))) |> 
+  ggplot(aes(Mouth_distance, `TL (cm)`, group = Species, lty = Species, shape = Species)) + 
+  stat_summary(geom = "line") +
+  stat_summary(geom = "point") +
+  theme_classic(base_family = "times", base_size = 22) +
+  theme(legend.position = c(0.8, 0.6)) +
+  labs(x = "Location (distance from mouth km)", y = "Total Length (cm)") +
+  facet_wrap(~`life stage`)
+```
+
+## Length
+
+```{r}
+Juv |> 
+  ggplot(aes(`Moon Phase`, `TL (cm)`, group = Species, lty = Species, shape = Species)) + 
+  stat_summary(geom = "point") +
+  stat_summary(geom = "line") +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.4, 0.8)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Moon Phase", y ="Total Length") +
+  scale_x_discrete(label = scales::label_wrap(5))
+```
+
+## Length by life stage
+
+```{r}
+Juv |> 
+  ggplot(aes(`Moon Phase`, `TL (cm)`, group = Species, lty = Species, shape = Species)) + 
+  stat_summary(geom = "point") +
+  stat_summary(geom = "line") +
+  theme_classic(base_family = "times", base_size = 22)+
+  theme(legend.position = c(0.8, 0.6)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(x = "Moon Phase", y ="Total Length") +
+  facet_wrap(~`life stage`) +
+  scale_x_discrete(label = scales::label_wrap(5))
+```
+
+## CPUE FOR ALL SPECIES
+
+```{r}
+combined |> 
+  summarise(catch = sum(n, na.rm = T),
+            `Total Length (cm)` = round(mean(`Total Length (cm)`, na.rm = T),2),
+            `Weight (g)` = round(mean(`Weight (g)`, na.rm = T),2),
+            .by = Species) |> 
+  mutate(CPUE = round(catch/24,2),
+         Biomass = round((catch*`Weight (g)`)/1000,2)) |> 
+  arrange(desc(CPUE)) |> 
+  select(Species, catch, CPUE, everything()) |> gt()
+```
+
+## CPUE GRAPH bar
+
+```{r}
+Juv |> 
+  #filter(`life stage` == "Glass eel") |> 
+  count(`life stage`,`Moon Phase`,Species) |> 
+  mutate(CPUE = n/24) |> 
+  ggplot(aes(`Moon Phase`, CPUE, fill = Species)) + 
+  stat_summary(geom = "errorbar", position = "dodge") + 
+  stat_summary(geom = "bar", position = "dodge" , width = 0.8) +
+  theme_classic(base_family = "times", base_size = 20) +
+  scale_x_discrete(label = scales::label_wrap(10)) +
+  theme(legend.position = c(0.3, 0.7)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(y = "CPUE (n/net/day)") +
+  facet_wrap(~`life stage`)
+```
+
+## Line
+
+```{r}
+Juv |> 
+  #filter(`life stage` == "Glass eel") |> 
+  count(`life stage`,`Moon Phase`,Species) |> 
+  mutate(CPUE = n/24) |> 
+  ggplot(aes(`Moon Phase`, CPUE, shape = Species, lty = Species, group = Species)) + 
+  stat_summary(geom = "line") + 
+  stat_summary(geom = "point") +
+  theme_classic(base_family = "times", base_size = 20) +
+  scale_x_discrete(label = scales::label_wrap(10)) +
+  theme(legend.position = c(0.3, 0.7)) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  labs(y = "CPUE (n/net/day)") +
+  facet_wrap(~`life stage`)
+```
+
+
+## NEM
+```{r}
+Juv |> 
+  mutate(Monson = if_else(str_detect(Month, "August|JULY|September|October"), "SEM", "NEM")) |> 
+  count(`life stage`,Monson, Species) |> 
+  ggplot(aes(Species, n, fill = Monson)) + geom_col(position = "dodge", width = 0.5) +
+  labs(x = "Species", y = "Abundance") +
+  facet_wrap(~`life stage`) +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  theme_classic(base_size = 20, base_family = "times") +
+  theme(legend.position = c(0.8, 0.8)) +
+  scale_x_discrete(label = scales::label_wrap(10))
+```
+
+## GLass eels Monsoon
+```{r}
+Juv |> filter(`life stage` == "Glass eel") |> 
+  mutate(Monson = if_else(str_detect(Month, "August|JULY|September|October"), "SEM", "NEM")) |> 
+  count(Monson, Species) |> 
+  ggplot(aes(Species, n, fill = Monson)) + geom_col(position = "dodge", width = 0.5) +
+  labs(x = "Species", y = "Abundance") +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  theme_classic(base_size = 20, base_family = "times") +
+  theme(legend.position = c(0.8, 0.8))
+```
+
+
+## Elvers Monsoon
+```{r}
+Juv |> filter(!`life stage` == "Glass eel") |> 
+  mutate(Monson = if_else(str_detect(Month, "August|JULY|September|October"), "SEM", "NEM")) |> 
+  count(Monson, Species) |> 
+  ggplot(aes(Species, n, fill = Monson)) + geom_col(position = "dodge", width = 0.5) +
+  labs(x = "Anguillid eel Species", y = "Abundance") +
+  scale_fill_manual(values = c("black", "gray", "gray30")) +
+  theme_classic(base_size = 20, base_family = "times") +
+  theme(legend.position = c(0.2, 0.8))
+```

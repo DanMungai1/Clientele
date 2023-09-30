@@ -1,0 +1,44 @@
+---
+title: "Plot"
+author: "Lena"
+format: docx
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(gtsummary)
+library(glue)
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+combined <- read_excel("combined.xlsx")
+
+juv <- read_excel("juv.xlsx") %>% janitor::clean_names() %>% 
+  mutate(species = case_when(species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             species == "Anguilla bengalensis" ~ "Anguilla bengalensis",
+                             species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             .default = species),
+         season = if_else(season == "Dry", "Dry", "Wet"),
+         site = glue("SBE {effort}"))
+```
+## Plot
+### Elvers
+```{r}
+#| fig-width: 11
+#| fig-height: 5
+juv %>% #filter(life_stage == "Elver") %>% 
+  ggplot(aes(site, tl_cm, fill = species)) + 
+  stat_summary(geom = "bar", fun.data = "mean_se", position = "dodge") +
+  stat_summary(geom = "errorbar", fun.data = "mean_se",position = "dodge") + 
+  facet_wrap(~life_stage, scales = "free") +
+  scale_fill_manual(values = c("gray", "gray30", "black")) +
+  theme_classic(base_family = "Noto serif", base_size = 20) +
+  labs(y = "Length (cm)", x = "Sampling Site") + theme(legend.position = "bottom")
+```
+

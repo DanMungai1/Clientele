@@ -1,0 +1,125 @@
+---
+title: "Indices"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+fig-width: 11
+fig-height: 7
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+juv <- read_excel("juv.xlsx")
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+library(gt)
+library(gtsummary)
+recruitment <- read_excel("Yearly recruitment.xlsx")
+```
+
+## Wrangle
+
+```{r}
+Juv <- juv %>% 
+  mutate(site = case_when(Effort == 1 ~ "SBE4",
+                          Effort == 2 ~ "SBE3",
+                          Effort == 3 ~ "SBE2",
+                          Effort == 4 ~ "SBE1"),
+         Species = case_when(str_detect(Species, "be") ~ "Anguilla bengalensis",
+                             str_detect(Species, "mar") ~ "Anguilla marmorata",
+                             .default = "Anguilla mossambica"),
+         `TL (mm)` = `TL (cm)`*10000,
+         `DG (mm)` = `DG (cm)` * 10000,
+         Season = if_else(Season == "Dry", "Dry", "Wet")) |> 
+  mutate(elongation_index = `TL (mm)`/`DF to AF (mm)`,
+         effort = 24,
+         LH = (`LH (mm)` + `LV (mm)`)/4,
+         RH = (`RH (mm)` + `RV (mm)`)/4,
+         LR = LH*RH,
+         PI = pi/`TL (mm)`,
+         OI = LR*PI*100,
+         seasonality = if_else(str_detect(Month, "October|August|September|JULY"), "SEM", "NEM"))|> 
+  select(-c(`DG (cm)`,Effort, LH, RH, LR,PI)) 
+```
+
+## Cpue graph
+
+```{r}
+Juv |> 
+  count(site, Species) |> 
+  mutate(CPUE = n/24) |> 
+  ggplot(aes(site, CPUE, group = Species, shape = Species, lty = Species)) + 
+  geom_point(size = 2.5) + geom_line(linewidth = 1.5) +
+  labs(x = "Sampling Site", y = "CPUE-no/trap/day") +
+  theme_classic(base_size = 20, base_family = "Noto serif") +
+  theme(legend.position = c(0.75, 0.5)) +
+  scale_y_continuous(breaks = seq(0,0.9, 0.1))
+```
+
+## Distance from the ocean
+
+```{r}
+Juv |> 
+  mutate(Mouth_distance = case_when(site == "SBE1" ~ "0.5KM",
+                                    site == "SBE2" ~ "1KM",
+                                    site == "SBE3" ~ "1.5KM",
+                                    site == "SBE4" ~ "2KM")) |> 
+  ggplot(aes(Mouth_distance, `TL (cm)`, lty = Species, group = Species, shape = Species)) +
+  stat_summary() + stat_summary(geom = "line") +
+  theme_classic(base_size = 20, base_family = "Noto serif") +
+  theme(legend.position = c(0.8, 0.8)) +
+  labs(y = "Mean Length (cm)", x = "Distance from the Ocean (Km)") +
+  scale_y_continuous(limits = c(4,8),breaks = seq(4,10, 1))
+```
+
+## Yearly Recruitment
+```{r}
+recruitment |> count(Month, `Local name`) |> 
+  mutate(Month = fct_relevel(Month, c("March", "April" , "May", "July", "August", "September", "October", "November"))) |> 
+  ggplot(aes(Month, n, group = `Local name`,
+             lty = `Local name`, shape = `Local name`)) + 
+  geom_line(linewidth = 1.2) + geom_point(size = 2) +
+  theme_classic(base_size = 20, base_family = "Noto serif") +
+  theme(legend.position = c(0.8, 0.6)) +
+  scale_y_continuous(limits = c(0,45),breaks = seq(0,40, 5)) +
+  labs(y = "Anguillid eels")
+```
+
+## Indices per site per species
+```{r}
+Juv |> select(site, Species, OI, elongation_index) |> 
+  summarise(ocular_index = mean(OI),
+            elongation_index = mean(elongation_index),
+            .by = c(site, Species)) |> 
+  pivot_wider(names_from = Species, values_from = c(ocular_index,elongation_index)) |> gt()
+```
+
+## Indices per moon phase per species
+```{r}
+Juv |> select(`Moon Phase`, Species, OI, elongation_index) |> 
+  summarise(ocular_index = mean(OI),
+            elongation_index = mean(elongation_index),
+            .by = c(`Moon Phase`, Species)) |> 
+  pivot_wider(names_from = Species, values_from = c(ocular_index,elongation_index)) |> gt()
+```
+
+## Indices per NEM, SEM per species
+```{r}
+Juv |> select(seasonality, Species, OI, elongation_index) |> 
+  summarise(ocular_index = mean(OI),
+            elongation_index = mean(elongation_index),
+            .by = c(seasonality, Species)) |> 
+  pivot_wider(names_from = Species, values_from = c(ocular_index,elongation_index)) |> gt()
+```
+
+## significance
+```{r}
+Juv
+```
+

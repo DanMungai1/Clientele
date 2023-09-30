@@ -1,0 +1,29 @@
+---
+title: "Physio-chemical parameters"
+author: "Lena"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(gtsummary)
+physiochem <- read_excel("PHYSICHOCHEMICAL PARAMETERS.xlsx", 
+    sheet = "PHYCHOCHEMICAL VARIABLES &FLOW ")
+```
+
+## summary
+```{r}
+physiochem |> 
+  tbl_summary(by = site,
+              statistic = everything() ~ "{mean} ({sd})",
+              missing = "no") |> add_p() |> 
+  modify_header(label = "**Physico-chemical Parameters**") |> as_gt()
+```
+

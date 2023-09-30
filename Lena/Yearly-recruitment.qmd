@@ -1,0 +1,37 @@
+---
+title: "Whole Year Analysis"
+author: "Lena"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+fig-width: 11
+fig-height: 7
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(gtsummary)
+recruitment <- read_excel("Yearly recruitment.xlsx")
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+```
+
+## summary
+
+```{r}
+
+recruitment |> 
+  count(Month, `Local name`) |> 
+  mutate(Month = fct_relevel(Month, c("March", "April" , "May", "July", "August", "September", "October", "November"))) |> 
+  ggplot(aes(Month, n, fill = `Local name`)) + geom_col(position = "dodge") +
+  theme_classic(base_family = "Noto serif", base_size = 20)+
+  theme(legend.position = c(0.8, 0.7)) +
+  labs(fill = "Life Stage", y = "Anguillid eels")
+```

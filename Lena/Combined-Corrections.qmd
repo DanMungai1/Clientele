@@ -1,0 +1,129 @@
+---
+title: "Third Corrections"
+author: "Lena"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+combined <- read_excel("combined.xlsx")
+library(gt)
+library(gtsummary)
+```
+
+## Summary
+```{r}
+combined |> filter(Family != "Anguillidae") |> 
+  mutate(`Local name` = if_else(`Local name`== "prawns", "Kamba", `Local name`),
+         `Local name` = str_squish(`Local name`),
+         Species = str_squish(Species),
+         `English Name` = str_squish(`English Name`),
+         `English Name` = str_to_sentence(`English Name`),
+         Family = if_else(Family == "Bagridae", "Bagridae", Family)) |> 
+  summarise(Individuals = sum(n, na.rm = T), 
+            .by = c( `Local name`, `English Name`, Species, Family)) |> 
+  mutate(`Percentage Relative Abundance` = Individuals/sum(Individuals) * 100) |> 
+  gt(rowname_col = "Species",
+     groupname_col = "Family")
+```
+
+## Summary 2
+```{r}
+combined|> filter(Family != "Anguillidae")  |> 
+  select(Species, `Total Length (cm)`, `Weight (g)`) |> 
+  summarise(`Total Length (cm)` = mean(`Total Length (cm)`, na.rm = T),
+            `Weight (g)` = mean(`Weight (g)`, na.rm = T),
+            .by = Species) |> 
+  gt()
+```
+
+## Temporal Distribution
+```{r}
+library(readxl)
+Juvenile <- read_excel("Juvenile Anguillid.xlsx") |> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species))
+
+
+```
+
+# glass eels
+```{r}
+# 
+Juvenile |> select(Month, `Local name)`, Species) |> 
+  filter(`Local name)` != "Elver") |> 
+  tbl_cross(Species, Month, percent = "row") |> as_gt()
+```
+
+# elvers
+```{r}
+
+Juvenile |> select(Month, `Local name)`, Species) |> 
+  filter(`Local name)` == "Elver") |> 
+  tbl_cross(Species, Month, percent = "row") |> as_gt()
+```
+
+## Site
+```{r}
+library(rio)
+eels <- import_list("Juvenile Anguillid.xlsx")
+Anguillids <- eels$` Juvenile Only`|> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species),
+         Site = case_when(Effort == 1 ~ "SBE4",
+                            Effort == 2 ~ "SBE3",
+                            Effort == 3 ~ "SBE2",
+                            Effort == 4 ~ "SBE1"))
+```
+
+## Distribution in sites
+```{r}
+Anguillids |> 
+  tbl_cross(Species, Site, percent = "cell")
+```
+
+## Life stages
+```{r}
+Anguillids |> 
+  count(Species, `Local name)`, Site) |> 
+  pivot_wider(names_from = Site, values_from = n, values_fill = 0) |> 
+  select(Species, SBE1,	SBE2,	SBE3,	SBE4, `Local name)`) |> 
+  gt(groupname_col = "Local name)")
+```
+
+## Size in every site
+```{r}
+Anguillids |> select(Species, `Local name)`, Site, `TL (cm)`) |> 
+  summarise(`Total Length` = round(mean(`TL (cm)`, na.rm = T),2),
+            SD = round(sd(`TL (cm)`, na.rm = T),2), 
+            .by = c(Species, `Local name)`, Site)) |> 
+  pivot_wider(names_from = Site, values_from = c(`Total Length`, SD)) |> 
+  unite("SBE1", `Total Length_SBE1`, SD_SBE1, sep = "±") |> 
+  unite("SBE2", `Total Length_SBE2`, SD_SBE2, sep = "±") |> 
+  unite("SBE3", `Total Length_SBE3`, SD_SBE3, sep = "±") |> 
+  unite("SBE4", `Total Length_SBE4`, SD_SBE4, sep = "±") |>
+  gt(groupname_col = "Local name)")
+```
+
+## Juvenile Anguillids
+```{r}
+Anguillids |> 
+  count(Species, `Local name)`, name = "Individuals") |> 
+  mutate(`Relative Abundance` = round(Individuals/sum(Individuals)*100,2)) |> 
+  arrange(desc(Individuals)) |> 
+  gt(groupname_col = "Local name)")
+```
+

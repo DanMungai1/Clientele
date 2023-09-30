@@ -1,0 +1,296 @@
+---
+title: "Corrections"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+## Data
+
+```{r}
+library(tidyverse)
+library(gt)
+library(gtsummary)
+library(rio)
+library(plotrix)
+library(showtext)
+eels <- import_list("Juvenile Anguillid.xlsx")
+font_add_google("Noto serif", "noto serif")
+showtext_auto()
+showtext_opts(dpi = 300)
+```
+
+## All eels combined
+
+```{r}
+combined <- eels$`Combined Juveniles` |> 
+  mutate(Site = case_when(Effort == 1 ~ "SBE1",
+                          Effort == 2 ~ "SBE2",
+                          Effort == 3 ~ "SBE3",
+                          Effort == 4 ~ "SBE4"),
+         Season = ifelse(Season == "Dry", "Dry", "Wet"))
+```
+
+## All eels combined summary
+
+```{r}
+combined |> group_by(Species, Family, `English Name`, `Local name)`) |> 
+  summarise(Individual_counts = round(sum(n, na.rm = T),0),
+            `Total Length (cm)` = round(mean(`Total Length (cm)`, na.rm = T),2),
+            `Standard Length (cm)` = round(mean(`Standard Length (cm)`, na.rm = T),2),
+            `Weight (g)` = round(mean(`Weight (g)`, na.rm = T),2),
+            .groups = "drop") |> 
+  arrange(desc(Individual_counts)) |> 
+  left_join(combined |> group_by(Species, Family, `English Name`, `Local name)`) |> 
+  summarise(TLSD = round(std.error(`Total Length (cm)`, na.rm = T),2),
+            SLSD = round(std.error(`Standard Length (cm)`, na.rm = T),2),
+            WSD = round(std.error(`Weight (g)`, na.rm = T),2),
+            .groups = "drop")) |> 
+  unite("Total Length" ,`Total Length (cm)`, TLSD, sep = "±") |> 
+  unite("Standard Length",`Standard Length (cm)`, SLSD, sep = "±") |> 
+  unite("Weight (g)" ,`Weight (g)`, WSD, sep = "±") |> gt()
+```
+
+## Anguillids only
+
+```{r}
+Anguillids <- eels$` Juvenile Only`|> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species),
+         Site = case_when(Effort == 1 ~ "SBE1",
+                            Effort == 2 ~ "SBE2",
+                            Effort == 3 ~ "SBE3",
+                            Effort == 4 ~ "SBE4"))
+```
+
+## Anguillids Morphometry
+
+```{r}
+Anguillids |> 
+  select(Species, `TL (cm)`:`RV (mm)`) |> 
+  tbl_summary(by = Species,
+              statistic = everything() ~ "{mean} ± {sd}")
+```
+
+## Plot for Species across months
+
+### plot 1
+
+```{r}
+p1 <- Anguillids |> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species)) |> 
+  count(Species, Month, name = "individuals") |> 
+  mutate(Month = fct_relevel(Month, c("JULY", "August", "September", "October", "November"))) |> 
+  ggplot(aes(Month, individuals, fill = Species)) + geom_col(position = "fill") +
+  labs(y = "Individual Counts") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "noto serif"))
+```
+
+### plot 2
+
+```{r}
+p2 <- Anguillids |> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species)) |> 
+  count(Species, Month, name = "individuals") |> 
+  mutate(Month = fct_relevel(Month, c("JULY", "August", "September", "October", "November"))) |> 
+  ggplot(aes(Month, individuals, fill = Species)) + geom_col(position = "dodge") +
+  labs(y = "Individual Counts") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "noto serif"))
+
+```
+
+## Species across vegetation types
+
+```{r}
+p3 <- Anguillids |> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species)) |> 
+  count(Species, Biotope, name = "individuals") |> 
+  #mutate(Month = fct_relevel(Month, c("JULY", "August", "September", "October", "November"))) |> 
+  ggplot(aes(Biotope, individuals, fill = Species)) + geom_col(position = "dodge") +
+  labs(y = "Individual Counts") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "noto serif"))
+```
+
+## Species Across seasons
+
+```{r}
+p4 <- Anguillids |> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species)) |> 
+  count(Species, Season, name = "individuals") |> 
+  mutate(Season = if_else(Season == "Dry", "Dry", "Wet")) |> 
+  ggplot(aes(Season, individuals, fill = Species)) + geom_col(position = "fill") +
+  labs(y = "Individual Counts") +
+  theme_classic() +
+  scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "bottom",
+        text = element_text(family = "noto serif"))
+```
+
+## Species Recruitment across moon cycles
+
+```{r}
+p5 <- Anguillids |> 
+  mutate(Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             .default = Species)) |> 
+  count(Species, `Moon Phase`, name = "individuals") |> 
+  #mutate(Season = if_else(Season == "Dry", "Dry", "Wet")) |> 
+  ggplot(aes(`Moon Phase`, individuals, fill = Species)) + geom_col(position = "fill") +
+  labs(y = "Individual Counts") +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "noto serif"))
+
+```
+
+## Catch per unit Effort
+
+```{r}
+combined |> 
+  filter(Family == "Anguillidae") |> 
+  count(Species) |> 
+  mutate(CPUE = n/24)
+```
+
+## Distribution over space
+
+```{r}
+p6 <- Anguillids |> count(Site, Species, name = "Individuals") |> 
+  ggplot(aes(Site, Individuals, fill = Species)) + geom_col(position = "fill") +
+  theme_bw()+ 
+  scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "bottom",
+        text = element_text(family = "noto serif"))
+
+ggsave("sites.png", p6, dpi = 300, width = 6, height = 3)
+```
+
+```{r}
+p7 <- Anguillids |> count(Site, Species, name = "Individuals") |> 
+  ggplot(aes(Site, Individuals, fill = Species)) + geom_col(position = "dodge") +
+  theme_bw()+
+  theme(legend.position = "bottom",
+        text = element_text(family = "noto serif"))
+
+ggsave("sites2.png", p7, dpi = 300, width = 6, height = 3)
+```
+
+
+```{r}
+library(vegan)
+diversity_data <- combined |> 
+  select(Site, Species, n) |> 
+  na.omit() |> 
+  group_by(Site, Species) |> 
+  summarise(Species_counts = sum(n), .groups = "drop") |> 
+  pivot_wider(names_from = Species, values_from = Species_counts,
+              values_fill = 0)
+```
+
+## Diversity across sampling sites
+```{r}
+shannon <- diversity(diversity_data |> select(-1), 
+                     index = "shannon")
+
+simpson <- diversity(diversity_data |> select(-1), 
+                     index = "simpson")
+
+inv_simp <- diversity(diversity_data |> select(-1), 
+                     index = "invsimpson")
+
+tibble(shannon = shannon,
+                simpson = simpson,
+                inverse_simpson = inv_simp,
+       Site = c("SBE1","SBE2","SBE3","SBE4")) |> 
+  select(Site, everything()) |> 
+  gt() |> 
+  tab_spanner(label = "Ecological Divesity Indices",
+              columns = c("shannon",	"simpson", "inverse_simpson"))
+  
+```
+
+## Diversity across seasons
+```{r}
+seasons <- combined |> 
+  select(Season, Species, n) |> 
+  na.omit() |> 
+  summarise(counts = sum(n), .by = c(Season, Species)) |> 
+  pivot_wider(names_from = Species, values_from = counts, values_fill = 0)
+
+shw <- diversity(seasons |> select(-1))
+simp <- diversity(seasons |> select(-1), index = "simpson")
+inv_simp <- diversity(seasons |> select(-1), index = "invsimpson")
+
+tibble(shannon = shw,
+                simpson = simp,
+                inverse_simpson = inv_simp,
+       Season = seasons$Season) |> 
+  select(Season, everything()) |> 
+  gt() |> 
+  tab_spanner(label = "Ecological Divesity Indices",
+              columns = c("shannon",	"simpson", "inverse_simpson"))
+```
+
+## Divesity across moon phases
+```{r}
+moon <- combined |> 
+  select(`Moon Phase`, Species, n) |> 
+  na.omit() |> 
+  summarise(counts = sum(n), .by = c(`Moon Phase`, Species)) |> 
+  pivot_wider(names_from = Species, values_from = counts, values_fill = 0)
+
+shw <- diversity(moon |> select(-1))
+simp <- diversity(moon |> select(-1), index = "simpson")
+inv_simp <- diversity(moon |> select(-1), index = "invsimpson")
+
+tibble(shannon = shw,
+                simpson = simp,
+                inverse_simpson = inv_simp,
+       Moon_Phase = moon$`Moon Phase`) |> 
+  select(Moon_Phase, everything()) |> 
+  gt() |> 
+  tab_spanner(label = "Ecological Divesity Indices",
+              columns = c("shannon",	"simpson", "inverse_simpson"))
+```
+
+## FDI
+```{r}
+Anguillids |> 
+  select(Species:Site) |> 
+  mutate(Total_Length = `TL (cm)`*10000,
+         FDI = (`DF to AF (mm)`/Total_Length)*100,
+         LH_Index = (`LH (mm)`/Total_Length)*100,
+         RH_Index = (`RH (mm)`/Total_Length)*100) |> gt()
+```
+

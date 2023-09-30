@@ -1,0 +1,36 @@
+---
+title: "CPUE"
+author: "Lena"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+## Import
+
+```{r}
+library(tidyverse)
+library(rio)
+library(gt)
+Data <- import_list("Lena Gitonga_MSC Juvenile Data Sheet.xlsx")
+```
+
+## Juveniles
+
+```{r}
+juv <- Data$` Juvenile Only` |> 
+  mutate(Date = janitor::convert_to_date(Date, character_fun = lubridate::dmy),
+         Species = case_when(Species == "Anguilla begalensis" ~ "Anguilla bengalensis",
+                             Species == "Anguilla mossaambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla mossambica" ~ "Anguilla mossambica",
+                             Species == "Anguillla marmorata" ~ "Anguilla marmorata",
+                             .default = Species))
+
+juv |> count(Species, name = "Individuals") |> 
+  mutate(CPUE = Individuals/6) |> gt()
+
+```
