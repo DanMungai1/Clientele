@@ -1,0 +1,124 @@
+---
+title: "PTSD"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+## Data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+PTSD_Data <- read_excel("SABINE-PTSD.xlsx") |> 
+  mutate(Age = case_when(Age == "18-26" ~ "26-35",
+                         Age == "26-36" ~ "26-35",
+                         .default = Age),
+         Marital_status = fct_relevel(Marital_status, c("single", "married", "widow or widower")))
+
+SABINE <- read_excel("SABINE.xlsx")
+```
+
+## Social Demographics
+
+```{r}
+Demos <- PTSD_Data |> 
+  select(1:5)
+  
+```
+
+## PTSD
+
+```{r}
+SABINE_PTSD <- SABINE |> select(contains("PCL")) |> fill(everything()) |> 
+  rowwise() |> 
+  mutate(PTSD = sum(c_across(PCL_1:PCL_20)),
+         Re_experiences = sum(c_across(1:5)),
+         Avoidance = sum(c_across(6:7)),
+         Negative_alterations = sum(c_across(8:14)),
+         Hyper_arousal = sum(c_across(15:20)),
+         PTSD_score = round(PTSD/20,0),
+         Re_experiences_score = round(Re_experiences/5,0),
+         Avoidance_score = round(Avoidance/2,0),
+         Negative_alterations_score = round(Negative_alterations/6,0),
+         Hyper_arousal_score = round(Hyper_arousal/5,0)) |> 
+  select(PTSD:Hyper_arousal_score) |> 
+  mutate(across(.cols = contains("score"),
+            ~ case_when(.==0 ~ "Not at all",
+                              .==1 ~ "A little bit",
+                              .==2 ~ "Moderately",
+                              .==3 ~ "Quite a bit",
+                              .==4 ~ "Extremely"),
+            .names = "{col}_cutoff"))
+  
+  
+PTSD <- PTSD_Data |> select(contains("PCL")) |> 
+  mutate_all(str_to_lower) |> 
+  fill(everything()) |> 
+  mutate_all(~case_when(.== "not at all" ~ 0,
+                        .== "not al all" ~ 0,
+                        .== "a little" ~ 1,
+                        .== "bit moderately" ~ 2,
+                        .== "quiet abit" ~ 3,
+                        .== "quite a bit" ~ 3,
+                        .== "extremely"  ~ 4,
+                        .== "quiet a bit"  ~ 3,
+                        .== "quiet bit"  ~ 3,
+                        .== "a bit moderate" ~ 2,
+                        .== "bit moderate" ~ 2)) |> 
+  rowwise() |> 
+  mutate(PTSD = sum(c_across(PCL_1:PCL_20)),
+         Re_experiences = sum(c_across(1:5)),
+         Avoidance = sum(c_across(6:7)),
+         Negative_alterations = sum(c_across(8:14)),
+         Hyper_arousal = sum(c_across(15:20)),
+         PTSD_score = round(PTSD/20,0),
+         Re_experiences_score = round(Re_experiences/5,0),
+         Avoidance_score = round(Avoidance/2,0),
+         Negative_alterations_score = round(Negative_alterations/6,0),
+         Hyper_arousal_score = round(Hyper_arousal/5,0)) |> 
+  select(PTSD:Hyper_arousal_score) |> 
+  mutate(across(.cols = contains("score"),
+            ~ case_when(.==0 ~ "Not at all",
+                              .==1 ~ "A little bit",
+                              .==2 ~ "Moderately",
+                              .==3 ~ "Quite a bit",
+                              .==4 ~ "Extremely"),
+            .names = "{col}_cutoff"))
+
+```
+
+## Beck's Depression
+
+```{r}
+BDI <- SABINE |> 
+  select(contains("BDI")) |> fill(everything()) |> 
+  rowwise() |> 
+  mutate(BDI = sum(c_across(BDI_1:BDI_20)),
+         BDI_CUT = case_when(between(BDI, 1,13) ~ "Normal",
+                             between(BDI, 14,19) ~ "Mild",
+                             between(BDI, 20,28) ~ "Moderate",
+                             BDI >= 29 ~ "Severe")) |> 
+  select(BDI:BDI_CUT)
+
+
+  
+```
+
+## EFFECTS
+
+```{r}
+effect_coping <- PTSD_Data |> select(contains(c("effect","coping")))
+```
+
+## Combine
+
+```{r}
+PTSD_Complete <- bind_cols(Demos, PTSD, BDI, effect_coping)
+#writexl::write_xlsx(PTSD_Complete, "PTSD_Complete.xlsx")
+```

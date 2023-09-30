@@ -1,0 +1,315 @@
+---
+title: "EFFECTS OF PARTICIPATORY MONITORING AND EVALUATION ON THE SUSTAINABILITY OF ECONOMIC STIMULUS PROGRAM IN THE KENYAN EDUCATION SECTOR: A CASE OF NAIROBI COUNTY, KENYA"
+author: "Lucy"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+fig-width: 7
+fig-height: 5
+---
+
+```{r}
+library(gt)
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(showtext)
+library(glue)
+library(scales)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+lucy <- read_excel("lucy-dataset.xlsx") |> 
+  mutate(Gender = if_else(Gender == "male", "Male", "Female"))
+```
+
+## Social Demographics
+```{r}
+lucy |> select(Gender:Working) |> 
+  mutate(Age = fct_relevel(Age, c("below 20", "20-29", "30-39", "40-49","50 years and above")),
+         Education = fct_relevel(Education, c("Diploma","Bachelor's Degree", "Masters Degree", "PHD", "Others")),
+         Working = fct_relevel(Working, c("-1 year", "2-5 years", "5-10 years", "10-15 years","15-20 years", "20+")))  |> 
+  tbl_summary() |> as_gt()
+```
+
+## Gender
+```{r}
+Gender <- lucy |> count(Gender) |> 
+  mutate(percent = round(n/sum(n)*100),
+         Label = glue("{Gender}: {percent}%"))
+
+pie(x=Gender$n, labels = Gender$Label, family="Noto serif")
+```
+
+## Age
+```{r}
+Age <- lucy |> count(Age) |> 
+  mutate(percent = round(n/sum(n)*100),
+         Label = glue("({Age}): {percent}%"))
+
+pie(x=Age$n, labels = Age$Label, family="Noto serif")
+```
+
+
+## Education Level
+```{r}
+Education <- lucy |> count(Education) |> 
+  mutate(percent = round(n/sum(n)*100),
+         Label = glue("({Education}): {percent}%"))
+
+pie(x=Education$n, labels = Education$Label, family="Noto serif")
+```
+
+## Working Experience
+```{r}
+Working <- lucy |> count(Working) |> 
+  mutate(percent = round(n/sum(n)*100),
+         Label = glue("({Working}): {percent}%"))
+
+pie(x=Working$n, labels = Working$Label, family="Noto serif")
+```
+
+# Stakeholder Involvement
+```{r}
+lucy |> select(PME_awareness:PME_interactions) |> 
+  tbl_summary()
+```
+
+## PME Awareness pie
+```{r}
+Aware <- lucy |> count(PME_awareness) |> 
+  mutate(percent = round(n/sum(n)*100),
+         Label = glue("({PME_awareness}): {percent}%"))
+
+pie(x=Aware$n, labels = Aware$Label, family="Noto serif")
+```
+
+## PME Awareness barplot
+```{r}
+lucy |> 
+  ggplot(aes(PME_awareness)) + geom_bar(stat = "count") +
+  theme_classic(base_size = 20, base_family = "Noto serif") +
+  labs(y = "Respondents Involved") +
+  scale_y_continuous(breaks = seq(0, 55, 11))
+```
+
+
+## PME use pie
+```{r}
+use <- lucy |> count(`PME use`) |> 
+  mutate(percent = round(n/sum(n)*100),
+         Label = glue("({`PME use`}): {percent}%"))
+
+pie(x=use$n, labels = use$Label, family="Noto serif")
+```
+
+## PME use barplot
+```{r}
+lucy |> 
+  ggplot(aes(`PME use`)) + geom_bar(stat = "count") +
+  theme_classic(base_size = 20, base_family = "Noto serif") +
+  labs(y = "Respondents Involved") +
+  scale_y_continuous(breaks = seq(0, 55, 11)) +
+  scale_x_discrete(labels = label_wrap(10))
+```
+
+
+## PME interaction pie
+```{r}
+INTER <- lucy |> count(PME_interactions) |> 
+  mutate(percent = round(n/sum(n)*100),
+         Label = glue("({PME_interactions}): {percent}%"))
+
+pie(x=INTER$n, labels = INTER$Label, family="Noto serif")
+```
+
+## PME use barplot
+```{r}
+lucy |> count(PME_interactions) |> 
+  ggplot(aes(fct_reorder(PME_interactions, n), n)) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 20, base_family = "Noto serif") +
+  labs(y = "Respondents Involved", x = "PME interactions") +
+  scale_y_continuous(breaks = seq(0, 50, 10)) +
+  scale_x_discrete(labels = label_wrap(10))
+```
+
+# Key indicators of Stakeholder Involvement
+## Categorical wise
+```{r}
+lucy |> select(`Citizen control`:`Regular Debriefing`) |> 
+  pivot_longer(cols = everything()) |> 
+  mutate(value = str_to_sentence(value),
+         value = if_else(value == "Srongly agree", "Strongly agree", value),
+         value = fct_relevel(value, c("Strongly agree", "Agree", "Neutrol", "Disagree", "Strongly disagree"))) |> 
+  tbl_summary(by = value,
+              percent = "row")
+```
+
+## Interval wise
+```{r}
+lucy |> select(`Citizen control`:`Regular Debriefing`) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutrol" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  rowwise() |> 
+  mutate(indicators = mean(c_across(1:8)))|> gt()
+
+```
+
+# indicators 2 
+```{r}
+lucy |> select(`Citizen control`:`Regular Debriefing`) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutrol" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  pivot_longer(cols = everything()) |> 
+  summarise(Mean = mean(value),
+            Sd = sd(value),
+            .by = name)|> gt()
+
+```
+
+## Capacity building 1
+### categorical wise
+```{r}
+lucy |> select(capacity_building_1:capacity_building_3) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  pivot_longer(cols = everything()) |> 
+  mutate(value = str_squish(value),
+         value = fct_relevel(value,
+                             c("Strongly agree", "Agree",
+                               "Neutrol", "Disagree", "Strongly disagree"))) |> 
+  tbl_summary(by = value,
+              percent = "row")
+```
+
+## Cpacity building interval wise
+```{r}
+lucy |> select(capacity_building_1:capacity_building_3) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutrol" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  rowwise() |> 
+  mutate(capacity = mean(c_across(1:3))) |> gt()
+```
+
+## Capcity 2
+```{r}
+lucy |> select(capacity_building_1:capacity_building_3) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutrol" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  pivot_longer(cols = everything()) |> 
+  summarise(Mean = mean(value),
+            Sd = sd(value),
+            .by = name)|> gt()
+```
+
+## Stakeholder ownership
+### Categorical wise
+```{r}
+lucy |> select(Stakeholder_ownership_1:Stakeholder_ownership_4) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  pivot_longer(cols = everything()) |> 
+  mutate(value = if_else(value == "Neutrol", "Neutral", value),
+         value = fct_relevel(value,
+                             c("Strongly agree", "Agree",
+                               "Neutral", "Disagree", "Strongly disagree"))) |> 
+  tbl_summary(by = value,
+              percent = "row")
+```
+
+### Stakeholder ownership interval wise
+```{r}
+lucy |> select(Stakeholder_ownership_1:Stakeholder_ownership_4) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutral" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  rowwise() |> 
+  mutate(capacity = mean(c_across(1:4)))|> gt()
+```
+
+### stakeholder 2
+```{r}
+lucy |> select(Stakeholder_ownership_1:Stakeholder_ownership_4) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutral" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  pivot_longer(cols = everything()) |> 
+  summarise(Mean = mean(value),
+            Sd = sd(value),
+            .by = name)|> gt()
+```
+
+## Policy recommendation
+## Categorical wise
+```{r}
+lucy |> select(`Policy recommendation_1`:`Policy recommendation_3`) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  pivot_longer(cols = everything()) |> 
+  mutate(value = if_else(value == "Neutrol", "Neutral", value),
+         value = fct_relevel(value,
+                             c("Strongly agree", "Agree",
+                               "Neutral", "Disagree", "Strongly disagree"))) |> 
+  tbl_summary(by = value,
+              percent = "row")
+```
+
+## Interval wise
+
+```{r}
+lucy |> select(`Policy recommendation_1`:`Policy recommendation_3`) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutral" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  rowwise() |> 
+  mutate(capacity = mean(c_across(1:3)))
+```
+
+### recommendation 2
+```{r}
+lucy |> select(`Policy recommendation_1`:`Policy recommendation_3`) |> 
+  mutate_all(~str_to_sentence(.)) |> 
+  mutate_all(~case_when(.== "Strongly agree" ~ 5,
+                        .== "Agree" ~ 4,
+                        .== "Neutral" ~ 3,
+                        .== "Disagree" ~ 2,
+                        .== "Strongly disagree" ~ 1)) |> 
+  mutate_all(~replace_na(.,1)) |> 
+  pivot_longer(cols = everything()) |> 
+  summarise(Mean = mean(value),
+            Sd = sd(value),
+            .by = name)|> gt()
+```
+

@@ -1,0 +1,203 @@
+---
+title: "PTSD Data Analysis"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+fig-height: 4
+fig-width: 10
+fig-dpi: 110
+fig-align: center
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(RColorBrewer)
+PTSD <- read_excel("PTSD_Complete_dataset.xlsx")|> 
+  mutate(Gender = fct_relevel(Gender, c("Male", "Female")),
+         Marital_status = fct_relevel(Marital_status, c("single", "married", "widow or widower")))|> 
+  mutate(Re_experiences_score_cutoff = fct_relevel(Re_experiences_score_cutoff, c("A little bit", "Moderately","Quite a bit", "Extremely")),
+         Avoidance_score_cutoff = fct_relevel(Avoidance_score_cutoff, c("Not at all","A little bit", "Moderately","Quite a bit" ,"Extremely")),
+         Negative_alterations_score_cutoff = fct_relevel(Negative_alterations_score_cutoff, c("Not at all","A little bit", "Moderately", "Quite a bit","Extremely")),
+        Hyper_arousal_score_cutoff = fct_relevel(Hyper_arousal_score_cutoff,c("A little bit", "Moderately", "Quite a bit","Extremely"))) |> 
+  mutate(BDI_CUT = fct_relevel(BDI_CUT, c("Normal ups and Downs", "Mild Mood Disturbance","Borderline Clinical Depression",
+                                          "Moderate Depression", "Severe Depression","Extreme Depression" )))
+
+library(showtext)
+font_add_google(name = "Noto Serif", "Noto serif")
+showtext_auto()
+```
+
+## Geder graph
+
+```{r}
+PTSD |> 
+  count(Gender) |> 
+  ggplot(aes(Gender, n, fill = Gender)) + geom_col() +
+  labs(y = "Respondents") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Age graph
+
+```{r}
+PTSD |> 
+  count(Age) |> 
+  ggplot(aes(Age, n, fill = Age)) + geom_col() +
+  labs(y = "Respondents") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Marital Status graph
+
+```{r}
+PTSD |> 
+  count(Marital_status) |> 
+  ggplot(aes(Marital_status, n, fill = Marital_status)) + geom_col() +
+  labs(y = "Respondents", x = "Marital Status") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Education level graph
+
+```{r}
+PTSD |> 
+  count(`Education Level`) |> 
+  ggplot(aes(`Education Level`, n, fill = `Education Level`)) + geom_col() +
+  labs(y = "Respondents",) +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Age graph
+
+```{r}
+PTSD |> 
+  count(Age) |> 
+  ggplot(aes(Age, n, fill = Age)) + geom_col() +
+  labs(y = "Respondents") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+
+## PTSD Graph
+
+```{r}
+PTSD |> 
+  count(PTSD_score_cutoff) |> 
+  ggplot(aes(PTSD_score_cutoff, n, fill = PTSD_score_cutoff)) + geom_col()+
+  labs(y = "Respondents", x = "PTSD Prevalence") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+  
+```
+
+### REEXPERIENCES
+
+```{r}
+PTSD |> 
+  count(Re_experiences_score_cutoff) |> 
+  ggplot(aes(Re_experiences_score_cutoff, n, fill = Re_experiences_score_cutoff)) + geom_col()+
+  labs(y = "Respondents", x = "Re-experiences Prevalence") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+### Avoidance
+
+```{r}
+PTSD |> 
+  count(Avoidance_score_cutoff) |> 
+  ggplot(aes(Avoidance_score_cutoff, n, fill = Avoidance_score_cutoff)) + geom_col()+
+  labs(y = "Respondents", x = "Avoidance Prevalence") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+### Negative alterations
+
+```{r}
+PTSD |> 
+  count(Negative_alterations_score_cutoff) |> 
+  ggplot(aes(Negative_alterations_score_cutoff, n, fill = Negative_alterations_score_cutoff)) +
+  geom_col()+
+  labs(y = "Respondents", x = "Negative Alterations ") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+### Hyper-arousal
+
+```{r}
+PTSD |> 
+  count(Hyper_arousal_score_cutoff) |> 
+  ggplot(aes(Hyper_arousal_score_cutoff, n, fill = Hyper_arousal_score_cutoff)) +
+  geom_col()+
+  labs(y = "Respondents", x = "Hyper-arousal") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+## Depression Graph
+
+```{r}
+#| fig-height: 7 
+#| fig-width: 10
+#| fig-dpi: 300
+#| fig-align: center
+PTSD |> 
+  count(BDI_CUT) |> 
+  ggplot(aes(BDI_CUT, n, fill = BDI_CUT)) +
+  geom_col()+
+  labs(y = "Respondents", x = "Prevalence of Depression") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") + coord_flip() +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1) +
+  scale_x_discrete(labels = scales::label_wrap(10))
+```
+
+
+Depression scores and PTSD scores have a direct positive correlation of 0.3. When PTSD increases, Depression increases as well.
+
+```{r}
+library(GGally)
+library(corrr)
+PTSD |> select(PTSD:Hyper_arousal, BDI) |> 
+  ggpairs()
+
+PTSD |> select(PTSD:Hyper_arousal, BDI) |> 
+  ggcorr(label = T)
+
+PTSD |> select(PTSD:Hyper_arousal, BDI) |> correlate() |> gt::gt()
+
+```

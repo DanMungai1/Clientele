@@ -1,0 +1,403 @@
+---
+title: "PTSD Data Analysis"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(RColorBrewer)
+PTSD <- read_excel("PTSD_Complete.xlsx")|> 
+  mutate(Gender = fct_relevel(Gender, c("Male", "Female")),
+         Marital_status = fct_relevel(Marital_status, c("single", "married", "widow or widower")))|> 
+  mutate(Re_experiences_score_cutoff = fct_relevel(Re_experiences_score_cutoff, c("A little bit", "Moderately","Quite a bit", "Extremely")),
+         Avoidance_score_cutoff = fct_relevel(Avoidance_score_cutoff, c("Not at all","A little bit", "Moderately","Quite a bit" ,"Extremely")),
+         Negative_alterations_score_cutoff = fct_relevel(Negative_alterations_score_cutoff, c("Not at all","A little bit", "Moderately", "Quite a bit","Extremely")),
+        Hyper_arousal_score_cutoff = fct_relevel(Hyper_arousal_score_cutoff,c("A little bit", "Moderately", "Quite a bit","Extremely"))) |> 
+  mutate(BDI_CUT = fct_relevel(BDI_CUT, c("Normal", "Mild","Moderate","Severe")))
+
+library(showtext)
+font_add_google(name = "Noto Serif", "Noto serif")
+showtext_auto()
+```
+
+## Social Demographics
+
+Among the respondents included in this study, the majority were women (60%) while men comprised less than half of all respondents (40%). The majority of the respondents were between the ages of 26 and 35 (36%) followed by respondents between 18 and 25 years old (34%), respondents above 36 years comprised 30% of all respondents. Most of the respondents were married (71%) followed by single people (23%) while only 20 respondents were widowed persons (6.1%). All the respondents included in this study had been in the camp for less than 5 years. Regarding highest education levels achieved by the refugee respondents, majority had primary school education at 47% followed by those without any schooling years (31%) while 21% had secondary school education and only 3 individuals making 0.9% of the respondents had attained university education level. The results are as illustrated in @tbl-social
+
+```{r}
+#| label: tbl-social
+#| tbl-cap: social demographic factors
+PTSD |> select(1:5) |> 
+  tbl_summary() |> 
+  modify_header(label = "Social Demographic Factors", stat_0 = "Frequency (%)") |> as_gt()
+```
+
+## Geder graph
+
+```{r}
+PTSD |> 
+  count(Gender) |> 
+  ggplot(aes(Gender, n, fill = Gender)) + geom_col() +
+  labs(y = "Respondents") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Age graph
+
+```{r}
+PTSD |> 
+  count(Age) |> 
+  ggplot(aes(Age, n, fill = Age)) + geom_col() +
+  labs(y = "Respondents") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Marital Status graph
+
+```{r}
+PTSD |> 
+  count(Marital_status) |> 
+  ggplot(aes(Marital_status, n, fill = Marital_status)) + geom_col() +
+  labs(y = "Respondents", x = "Marital Status") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Education level graph
+
+```{r}
+PTSD |> 
+  count(`Education Level`) |> 
+  ggplot(aes(`Education Level`, n, fill = `Education Level`)) + geom_col() +
+  labs(y = "Respondents",) +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## Age graph
+
+```{r}
+PTSD |> 
+  count(Age) |> 
+  ggplot(aes(Age, n, fill = Age)) + geom_col() +
+  labs(y = "Respondents") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "none")
+```
+
+## PTSD
+
+@tbl-PTSD is an illustration of post traumatic stress disorder as measured from the respondents. On the total PTSD scores, the majority of the respondents at 90% had a moderate level of PTSD. This meant that on overall, majority of the respondents were suffering from PTSD at the time of the study. 31 respondents making up 9.5% had a higher level than the majority at a quite a bit level of PTSD while only two individuals only had a little bit of PTSD.
+
+The PTSD scale has four other sub scales. Majority of the respondents had quite a bit of re-experiences PTSD at 55% followed by those with moderate level 39%; while 4.9% had extreme re-experiences PTSD as only 5 had a little bit of re-experiences PTSD.
+
+Majority of the respondents experienced moderate avoidance score (66%), followed by 14% with quite a bit, then 11% with extreme avoidance as only 8% had below quite a bite of avoidance. 66% of the respondents experienced moderate negative alterations, 21% with a quite a bit level of negative alterations which is higher than moderate and 8 respondents with extreme negative alterations. Only 10.1% of the respondents had below a little bit of negative alterations. Regarding hyper-arousal PTSD, 45% moderate and 45% in quite a bit levels were recorded, 5% had extreme hyper arousal while less 5% had a little bit level of hyper arousal.
+
+The results in @tbl-PTSD showed that for a fact the majority of refugees in the camp are experiencing post traumatic stress disorders from the total PTSD to all other PTSD sub scales.
+
+```{r}
+#| label: tbl-PTSD
+#| tbl-cap: PTSD subscales for all respondents
+PTSD |> select(contains("cutoff")) |> 
+  tbl_summary() |> modify_header(label = "**PCL-5 Subscales**", stat_0 = "**Frequency (%)**")
+```
+
+## PTSD Graph
+
+```{r}
+PTSD |> 
+  count(PTSD_score_cutoff) |> 
+  ggplot(aes(PTSD_score_cutoff, n, fill = PTSD_score_cutoff)) + geom_col()+
+  labs(y = "Respondents", x = "PTSD Prevalence") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+  
+```
+
+### REEXPERIENCES
+
+```{r}
+PTSD |> 
+  count(Re_experiences_score_cutoff) |> 
+  ggplot(aes(Re_experiences_score_cutoff, n, fill = Re_experiences_score_cutoff)) + geom_col()+
+  labs(y = "Respondents", x = "Re-experiences Prevalence") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+### Avoidance
+
+```{r}
+PTSD |> 
+  count(Avoidance_score_cutoff) |> 
+  ggplot(aes(Avoidance_score_cutoff, n, fill = Avoidance_score_cutoff)) + geom_col()+
+  labs(y = "Respondents", x = "Avoidance Prevalence") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+### Negative alterations
+
+```{r}
+PTSD |> 
+  count(Negative_alterations_score_cutoff) |> 
+  ggplot(aes(Negative_alterations_score_cutoff, n, fill = Negative_alterations_score_cutoff)) +
+  geom_col()+
+  labs(y = "Respondents", x = "Negative Alterations ") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+### Hyper-arousal
+
+```{r}
+PTSD |> 
+  count(Hyper_arousal_score_cutoff) |> 
+  ggplot(aes(Hyper_arousal_score_cutoff, n, fill = Hyper_arousal_score_cutoff)) +
+  geom_col()+
+  labs(y = "Respondents", x = "Hyper-arousal") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1)
+```
+
+## PTSD Across social Demographics
+
+### Gender
+
+Across genders it can be noted that more women (91%) experienced moderate PTSD levels than men (89%) but a higher percentage of men (9.9%) experienced quite a bite PTSD in comparison with women (9.2%). However, these differences were not statistically significant since the chi-square test of association had a p value greater than 0.05 (p = 0.3). The same trend follows for all other PTSD sub scales and still statistically insignificant.
+
+```{r}
+PTSD |> 
+  select(1, contains("cutoff")) |> 
+  tbl_summary(by = Gender) |> add_p() |> 
+  modify_header(label = "**PCL-5 SCALES**")
+```
+
+### Age
+
+Regarding age groups, More 18 to 25 year-olds had moderate PTSD level compared to other age groups. the differences were statistically significant indicating the existence of an association between PTSD and age groups and that the younger the refugee the more likely they are to develop PTSD (p=0.027). The rest of the sub scales indicated nonexistence association across age groups.
+
+```{r}
+PTSD |> 
+  select(2, contains("cutoff")) |> 
+  tbl_summary(by = Age) |> add_p(test = everything() ~ "chisq.test") |> 
+  modify_header(label = "**PCL-5 SCALES**")
+```
+
+### Marital Status
+
+More single people (96%) experienced moderate levels of PTSD than the married and the widowed but more married people experienced higher levels of PTSD than the single people and the widowed. However, a chi-square test of association indicated nonexistence association between PTSD level in all scales and marital status.
+
+```{r}
+PTSD |> 
+  select(3, contains("cutoff")) |> 
+  tbl_summary(by = Marital_status) |> add_p(test = everything() ~ "chisq.test") |> 
+  modify_header(label = "**PCL-5 SCALES**")
+```
+
+### Education Level
+
+There existed an association between the education level of the refugee and their level of PTSD in the negative alterations (p=0.005) and re-experiences sub scales (p=0.038). All respondents with a university education had a moderate level of PTSD, 95% from primary school, 87% with secondary education and 84% without any schooling. This indicated that the more learned the refugee the higher their proclivity to develop PTSD.
+
+```{r}
+PTSD |> 
+  select(5, contains("cutoff")) |> 
+  tbl_summary(by = "Education Level") |> add_p(test = everything() ~ "chisq.test") |> 
+  modify_header(label = "**PCL-5 SCALES**")
+```
+
+## Scores themselves
+
+When looking at the scores themselves, the mean scores for PTSD was 43 which is above a threshold of 31-33 which is translated to mean that on average all respondents in the camp most likely had developed PTSD.
+
+```{r}
+PTSD |> select(PTSD:Hyper_arousal) |> 
+tbl_summary(type = everything() ~ "continuous",
+            statistic = all_continuous() ~ "{mean} ({sd})")
+```
+
+## Social Demographics Across the scores
+
+### Gender
+
+The PTSD scores were not statistically different across genders. However, women seemed to have higher scores compared to men in almost all the sub scales except for re-experiences.
+
+```{r}
+PTSD |> select(1,PTSD:Hyper_arousal) |> 
+tbl_summary(by = Gender,type = everything() ~ "continuous",
+            statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p(test = everything() ~ "t.test")
+```
+
+### Age
+
+Re-experiences PTSD were statistically significant across different age groups where the oldest had the highest scores.
+
+```{r}
+PTSD |> select(2,PTSD:Hyper_arousal) |> 
+tbl_summary(by = Age,type = everything() ~ "continuous",
+            statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p(test = everything() ~ "aov")
+```
+
+### Marital Status
+
+PTSD scores across marital status were not statistically significant although the married and the widowed seemed to have higher PTSD scores.
+
+```{r}
+PTSD |> select(3,PTSD:Hyper_arousal) |> 
+tbl_summary(by = Marital_status,type = everything() ~ "continuous",
+            statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p(test = everything() ~ "aov")
+```
+
+### Education Level
+
+Education level did have statistical significance across PTSD SCALES although respondents with university education reported higher PTSD scores.
+
+```{r}
+PTSD |> select(5,PTSD:Hyper_arousal) |> 
+tbl_summary(by ="Education Level",type = everything() ~ "continuous",
+            statistic = all_continuous() ~ "{mean} ({sd})") |> 
+  add_p(test = everything() ~ "aov")
+```
+
+# BECK'S Depression Inventory
+
+The BDI total score was 24 which fell under moderate depression. Therefore, on average, the refugees in the camp experienced moderate level of depression. As @tbl-BDI illustrates moderate level of depression had the highest percentage of respondents at 49% followed by borderline clinical depression ar 20%, severe depression and mild mood disturbance. Seven respondents had extreme depression while 46 had severe depression and only 3 were normal.
+
+```{r}
+#| label: tbl-BDI
+#| tbl-cap: Beck's Depression Inventory Scores
+PTSD |> select(contains("BDI")) |> 
+  tbl_summary(statistic = BDI ~ "{mean} ({sd})")
+```
+
+## Depression Graph
+
+```{r}
+PTSD |> 
+  count(BDI_CUT) |> 
+  ggplot(aes(BDI_CUT, n, fill = BDI_CUT)) +
+  geom_col()+
+  labs(y = "Respondents", x = "Prevalence of Depression") +
+  theme_bw(base_size = 20, base_family = "Noto serif") +
+  theme(panel.grid = element_blank(),
+        legend.position = "none") +
+  scale_fill_brewer(type = "seq", palette = "YlOrRd", direction = 1) +
+  scale_x_discrete(labels = scales::label_wrap(10))
+```
+
+## BECK'S Depression Inventory Across social demographics
+
+### Gender
+
+Women had higher depression score compared to men though statistically insignificant (p = 0.3). Chi-square also indicated nonexistence association between gender and depression level(p=0.7).
+
+```{r}
+PTSD |> select(1,contains("BDI")) |> 
+  tbl_summary(by = Gender,
+              statistic = BDI ~ "{mean} ({sd})") |> add_p() |> 
+  modify_header(label = "Depression")
+```
+
+### Age
+
+The youngest age group of 18 to 25 experienced high depression scores compared to other age groups though statistically insignificant (p=0.7). Depression levels were also independent of age groups.
+
+```{r}
+PTSD |> select(2,contains("BDI")) |> 
+  tbl_summary(by = Age,
+              statistic = BDI ~ "{mean} ({sd})") |> 
+  add_p(test = BDI_CUT ~ "chisq.test") |> 
+  modify_header(label = "Depression")
+```
+
+### Marital status
+
+Though statistically insignificant, the married had higher depression scores than single and widowed respondents. The levels of depression were independent of marital status.
+
+```{r}
+PTSD |> select(3,contains("BDI")) |> 
+  tbl_summary(by = Marital_status,
+              statistic = BDI ~ "{mean} ({sd})") |> 
+  add_p(test = BDI_CUT ~ "chisq.test") |> 
+  modify_header(label = "Depression")
+```
+
+### Education Level
+
+Secondary educated respondents had lower depression scores campared to other groups. The depression levels were independent of education level.
+
+```{r}
+PTSD |> select(5,contains("BDI")) |> 
+  tbl_summary(by = "Education Level",
+              statistic = BDI ~ "{mean} ({sd})") |> 
+  add_p(test = BDI_CUT ~ "chisq.test") |> 
+  modify_header(label = "Depression")
+```
+
+# PTSD EFFECTS
+
+Among the effects of PTSD, 90% of the respondents experienced nightmares, 77% experienced loneliness, 89% experienced difficulty in coping and adjustments, 83% experienced sadness majority of the time, 79% experienced fearfulness that something might happen to them while 79% experienced loss of confidence.
+
+```{r}
+PTSD |> select(contains("effect")) |> 
+  tbl_summary()
+```
+
+# PTSD Coping Mechanism
+
+Among the coping mechanisms, 84% had never been educated on PTSD, only 13% belong to a PTSD support group, only 17% have a program tackling PTSD in the camp. 67% of the refugees have no close relative to confide in about PTSD while 88% are not engaged in any PTSD program as most hang around their fellow refugees.
+
+```{r}
+PTSD |> select(contains("coping")) |> 
+  tbl_summary(type = everything() ~ 'categorical')
+```
+
+## CORRELATION , COMMORBIDITY OF PTSD AND DEPRESSION
+
+Depression scores and PTSD scores have a direct positive correlation of 0.3. When PTSD inceases, Depression increases as well.
+
+```{r}
+library(GGally)
+library(corrr)
+PTSD |> select(PTSD:Hyper_arousal, BDI) |> 
+  ggpairs()
+
+PTSD |> select(PTSD:Hyper_arousal, BDI) |> 
+  ggcorr(label = T)
+
+PTSD |> select(PTSD:Hyper_arousal, BDI) |> correlate() |> gt::gt()
+
+```

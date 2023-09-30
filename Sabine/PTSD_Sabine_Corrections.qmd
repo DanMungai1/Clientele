@@ -1,0 +1,119 @@
+---
+title: "PTSD Corrections"
+format: docx
+editor: visual
+execute: 
+  echo: false
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(RColorBrewer)
+# Data
+library(readxl)
+SABINE_PTSD <- read_excel("SABINE-PTSD.xlsx")
+PTSD <- read_excel("PTSD_Complete.xlsx")|> 
+  mutate(Gender = fct_relevel(Gender, c("Male", "Female")),
+         Marital_status = fct_relevel(Marital_status, c("single", "married", "widow or widower")))|> 
+  mutate(Re_experiences_score_cutoff = fct_relevel(Re_experiences_score_cutoff, c("A little bit", "Moderately","Quite a bit", "Extremely")),
+         Avoidance_score_cutoff = fct_relevel(Avoidance_score_cutoff, c("Not at all","A little bit", "Moderately","Quite a bit" ,"Extremely")),
+         Negative_alterations_score_cutoff = fct_relevel(Negative_alterations_score_cutoff, c("Not at all","A little bit", "Moderately", "Quite a bit","Extremely")),
+        Hyper_arousal_score_cutoff = fct_relevel(Hyper_arousal_score_cutoff,c("A little bit", "Moderately", "Quite a bit","Extremely"))) |> 
+  mutate(BDI_CUT = fct_relevel(BDI_CUT, c("Normal", "Mild","Moderate","Severe")))
+
+library(showtext)
+font_add_google(name = "Noto Serif", "Noto serif")
+showtext_auto()
+```
+
+## Social Demographics
+
+Among the respondents included in this study, the majority were women (60%) while men comprised less than half of all respondents (40%). The majority of the respondents were between the ages of 26 and 35 (36%) followed by respondents between 18 and 25 years old (34%), respondents above 36 years comprised 30% of all respondents. Most of the respondents were married (71%) followed by single people (23%) while only 20 respondents were widowed persons (6.1%). All the respondents included in this study had been in the camp for less than 5 years. Regarding highest education levels achieved by the refugee respondents, majority had primary school education at 47% followed by those without any schooling years (31%) while 21% had secondary school education and only 3 individuals making 0.9% of the respondents had attained university education level. The results are as illustrated in @tbl-social
+
+```{r}
+#| label: tbl-social
+#| tbl-cap: social demographic factors
+PTSD |> select(1:5) |> 
+  tbl_summary() |> 
+  modify_header(label = "Social Demographic Factors", stat_0 = "Frequency (%)") |> as_gt()
+```
+
+## PTSD
+
+```{r}
+PTSD |> select(PTSD:Hyper_arousal) |> 
+tbl_summary(type = everything() ~ "continuous",
+            statistic = all_continuous() ~ "{mean} ({sd})")
+```
+
+## PTSD Prevalence
+
+```{r}
+#| label: tbl-PTSD
+#| tbl-cap: PTSD subscales for all respondents
+PTSD |> select(contains("cutoff")) |> 
+  tbl_summary() |> modify_header(label = "**PCL-5 Subscales**", stat_0 = "**Frequency (%)**")
+```
+
+## Depression
+
+```{r}
+#| label: tbl-BDI
+#| tbl-cap: Beck's Depression Inventory Scores
+PTSD |> select(contains("BDI")) |> 
+  tbl_summary(statistic = BDI ~ "{mean} ({sd})")
+```
+
+### Depression across gender
+```{r}
+PTSD |> select(contains("BDI"), Gender) |> 
+  tbl_summary(by = Gender,statistic = BDI ~ "{mean} ({sd})")|> add_p()
+```
+
+### Depression across Age Group
+```{r}
+PTSD |> select(contains("BDI"), Age) |> 
+  tbl_summary(by = Age,statistic = BDI ~ "{mean} ({sd})")|> add_p()
+```
+
+
+### Depression across marital_status
+```{r}
+PTSD |> select(contains("BDI"), Marital_status) |> 
+  tbl_summary(by = Marital_status,statistic = BDI ~ "{mean} ({sd})")|> add_p()
+```
+
+### Depression across Education level
+```{r}
+PTSD |> select(contains("BDI"), `Education Level`) |> 
+  tbl_summary(by = `Education Level`,statistic = BDI ~ "{mean} ({sd})") |> add_p()
+```
+
+## Responses
+
+```{r}
+SABINE_PTSD %>% select(contains("PCL")) %>% 
+  pivot_longer(cols = everything()) %>% 
+  mutate(name = as_factor(name),
+         value = str_to_lower(value),
+         value = case_when(value == "not at all" ~ "Not at All",
+                        value == "not al all" ~ "Not at All",
+                        value == "a little" ~ "A little",
+                        value == "bit moderately" ~ "A bit Moderately",
+                        value == "quiet abit" ~ "Quite a Bit",
+                        value == "quite a bit" ~ "Quite a Bit",
+                        value == "extremely"  ~ "Extremely",
+                        value == "quiet a bit"  ~ "Quite a Bit",
+                        value == "quiet bit"  ~ "Quite a Bit",
+                        value == "a bit moderate" ~ "A bit Moderately",
+                        value == "bit moderate" ~ "A bit Moderately"),
+         value = fct_relevel(value, c("Not at All", "A little",
+                                      "A bit Moderately", "Quite a Bit","Extremely"))) %>% 
+  tbl_summary(by = value)
+```

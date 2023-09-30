@@ -1,0 +1,98 @@
+---
+title: "Coping Mechanisms"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(gtsummary)
+library(RColorBrewer)
+PTSD <- read_excel("PTSD_Complete_dataset.xlsx")|> 
+  mutate(Gender = fct_relevel(Gender, c("Male", "Female")),
+         Marital_status = fct_relevel(Marital_status, c("single", "married", "widow or widower")))|> 
+  mutate(Re_experiences_score_cutoff = fct_relevel(Re_experiences_score_cutoff, c("A little bit", "Moderately","Quite a bit", "Extremely")),
+         Avoidance_score_cutoff = fct_relevel(Avoidance_score_cutoff, c("Not at all","A little bit", "Moderately","Quite a bit" ,"Extremely")),
+         Negative_alterations_score_cutoff = fct_relevel(Negative_alterations_score_cutoff, c("Not at all","A little bit", "Moderately", "Quite a bit","Extremely")),
+        Hyper_arousal_score_cutoff = fct_relevel(Hyper_arousal_score_cutoff,c("A little bit", "Moderately", "Quite a bit","Extremely"))) |> 
+  mutate(BDI_CUT = fct_relevel(BDI_CUT, c("Normal ups and Downs", "Mild Mood Disturbance","Borderline Clinical Depression",
+                                          "Moderate Depression", "Severe Depression","Extreme Depression" )))
+
+library(showtext)
+font_add_google(name = "Noto Serif", "Noto serif")
+showtext_auto()
+```
+
+
+## PTSD effects 
+```{r}
+PTSD |> select(contains("effect")) |> 
+  tbl_summary()
+```
+
+### PTSD effects Across Genders
+```{r}
+PTSD |> select(contains("effect"), 1) |> 
+  tbl_summary(by = Gender) |> add_p()
+```
+
+
+### PTSD effects Across  Age
+```{r}
+PTSD |> select(contains("effect"), 2) |> 
+  tbl_summary(by = Age) |> add_p()
+```
+
+### PTSD effects  Across  marital status
+```{r}
+PTSD |> select(contains("effect"), 3) |> 
+  tbl_summary(by = Marital_status) |> add_p()
+```
+
+### PTSD effects Across  education level
+```{r}
+PTSD |> select(contains("effect"), 5) |> 
+  tbl_summary(by = "Education Level") |> 
+  add_p()
+```
+
+## Coping Mechanisms
+```{r}
+PTSD |> select(contains("coping")) |> 
+  tbl_summary(type = everything() ~ 'categorical', missing = "no")
+```
+
+
+## Coping Mechanisms Across Genders
+```{r}
+PTSD |> select(contains("coping"), 1) |> 
+  tbl_summary(by = Gender,type = everything() ~ 'categorical',
+              missing = "no") |> add_p()
+```
+
+## Coping Mechanisms Across age groups
+```{r}
+PTSD |> select(contains("coping"), 2) |> 
+  tbl_summary(by = Age,type = everything() ~ 'categorical',
+              missing = "no") |> add_p()
+```
+
+## Coping Mechanisms Across marital status
+```{r}
+PTSD |> select(contains("coping"), 3) |> 
+  tbl_summary(by = Marital_status,type = everything() ~ 'categorical',
+              missing = "no") |> add_p()
+```
+
+## Coping Mechanisms Across education level
+```{r}
+PTSD |> select(contains("coping"), 5) |> 
+  tbl_summary(by = "Education Level",type = everything() ~ 'categorical',
+              missing = "no") |> add_p()
+```

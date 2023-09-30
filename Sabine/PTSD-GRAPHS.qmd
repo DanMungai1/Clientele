@@ -1,0 +1,227 @@
+---
+title: "PTSD GRAPHS"
+format: pdf
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+fig-width: 20
+fig-height: 10
+fig-dpi: 50
+---
+
+```{r}
+library(tidyverse)
+library(ggtricks)
+library(readxl)
+PTSD <- read_excel("PTSD_Complete.xlsx")
+```
+
+## Style
+```{r}
+library(showtext)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+```
+
+## Gender
+```{r}
+PTSD %>% 
+  ggplot(aes(Gender)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents")
+```
+
+## Gender Pie
+```{r}
+PTSD %>% count(Gender) %>% 
+  ggplot() + geom_pie(aes(cat = Gender, val = n, fill = Gender)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "black"))
+  
+```
+
+## Age
+```{r}
+PTSD %>% 
+  ggplot(aes(Age)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents")
+```
+
+## Age Pie
+```{r}
+PTSD %>% count(Age) %>% 
+  ggplot() + geom_pie(aes(cat = Age, val = n, fill = Age)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "gray30", "black"))
+  
+```
+## Marital Status
+```{r}
+PTSD %>% 
+  ggplot(aes(Marital_status)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Marital Status")
+```
+
+## Marital Pie
+```{r}
+PTSD %>% count(Marital_status) %>% 
+  ggplot() + geom_pie(aes(cat = Marital_status, val = n, fill = Marital_status)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "black"))
+  
+```
+## Camp period
+```{r}
+PTSD %>% 
+  ggplot(aes(Camp_period)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Camp Residence Period")
+```
+
+## Camp Pie
+```{r}
+PTSD %>% count(Camp_period) %>% 
+  ggplot() + geom_pie(aes(cat = Camp_period, val = n, fill = Camp_period)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("black"))
+  
+```
+## Education Level
+```{r}
+PTSD %>% 
+  ggplot(aes(`Education Level`)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Education Level")
+```
+
+## Education Pie
+```{r}
+PTSD %>% count(`Education Level`) %>% 
+  ggplot() + geom_pie(aes(cat = `Education Level`, val = n, fill = `Education Level`)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "gray30", "black"))
+  
+```
+# PTSD
+## PTSD CUT OFF
+```{r}
+PTSD %>% 
+  ggplot(aes(PTSD_score_cutoff)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "PTSD Prevalence")
+```
+
+# PTSD Pie
+```{r}
+PTSD %>% count(PTSD_score_cutoff) %>% 
+  ggplot() + geom_pie(aes(cat = PTSD_score_cutoff, val = n, fill = PTSD_score_cutoff)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "black"))
+  
+```
+
+### Re- experiences
+```{r}
+PTSD %>% 
+  mutate(Re_experiences_score_cutoff = fct_relevel(Re_experiences_score_cutoff, 
+                                                   "A little bit", "Moderately", "Quite a bit",
+                                                   "Extremely")) %>% 
+  ggplot(aes(Re_experiences_score_cutoff)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Re-Experiences")
+```
+
+## Re- experiences Pie
+```{r}
+PTSD %>% count(Re_experiences_score_cutoff) %>% 
+  ggplot() + geom_pie(aes(cat = Re_experiences_score_cutoff, val = n, 
+                          fill = Re_experiences_score_cutoff)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "gray30", "black"))
+  
+```
+
+### Avoidance
+```{r}
+PTSD %>% 
+  mutate(Avoidance_score_cutoff = fct_relevel(Avoidance_score_cutoff, 
+                                                  "Not at all", "A little bit", "Moderately", "Quite a bit",
+                                                   "Extremely")) %>% 
+  ggplot(aes(Avoidance_score_cutoff)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Avoidance")
+```
+
+## Avoidance Pie
+```{r}
+PTSD %>% count(Avoidance_score_cutoff) %>% 
+  ggplot() + geom_pie(aes(cat = Avoidance_score_cutoff, val = n, 
+                          fill = Avoidance_score_cutoff)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "gray30", "gray39", "black"))
+  
+```
+
+### Negative Alterations
+```{r}
+PTSD %>% 
+  mutate(Negative_alterations_score_cutoff = fct_relevel(Negative_alterations_score_cutoff, 
+                                                  "Not at all", "A little bit", "Moderately", "Quite a bit",
+                                                   "Extremely")) %>% 
+  ggplot(aes(Negative_alterations_score_cutoff)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Negative Alterations Levels")
+```
+
+## Negative alterations Pie
+```{r}
+PTSD %>% count(Negative_alterations_score_cutoff) %>% 
+  ggplot() + geom_pie(aes(cat = Negative_alterations_score_cutoff, val = n, 
+                          fill = Negative_alterations_score_cutoff)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "gray30", "gray39", "black"))
+  
+```
+
+### Hyper-arousal
+```{r}
+PTSD %>% 
+  mutate(Hyper_arousal_score_cutoff = fct_relevel(Hyper_arousal_score_cutoff, 
+                                                  "A little bit", "Moderately", "Quite a bit",
+                                                   "Extremely")) %>% 
+  ggplot(aes(Hyper_arousal_score_cutoff)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Hyper Arousal Levels")
+```
+
+## Hyper-arousal Pie
+```{r}
+PTSD %>% count(Hyper_arousal_score_cutoff) %>% 
+  ggplot() + geom_pie(aes(cat = Hyper_arousal_score_cutoff, val = n, 
+                          fill = Hyper_arousal_score_cutoff)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white", "gray", "gray30", "gray39", "black"))
+  
+```
+# Depression
+```{r}
+PTSD %>% 
+  mutate(BDI_CUT = fct_relevel(BDI_CUT, "Normal", "Mild", "Moderate", "Severe")) %>% 
+  ggplot(aes(BDI_CUT)) + geom_bar(stat = "count") +
+  theme_bw(base_family = "Noto serif", base_size = 24) +
+  labs(y = "Respondents", x = "Depression Levels")
+```
+
+# BDI Pie
+```{r}
+PTSD %>% count(BDI_CUT) %>% 
+  ggplot() + geom_pie(aes(cat = BDI_CUT, val = n, fill = BDI_CUT)) +
+  coord_equal() + theme_void() +
+  scale_fill_manual(values = c("white","gray", "gray30", "black"))
+  
+```

@@ -1,0 +1,259 @@
+---
+title: "Paerasitic Pathogens"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(gt)
+library(gtsummary)
+library(readxl)
+Data <- read_excel("REFINED FINNAN DATA.xlsx") |> 
+  mutate(`Culture systems` = case_when(`Culture systems` == "Liner pond" ~ "Liner ponds",
+                                       `Culture systems` == "Lined earthen pond" ~ "Liner ponds",
+                                             `Culture systems` == "Concrete" ~ "Concrete Pond",
+                                             .default = `Culture systems`),
+         Condition_factor = case_when(`Condition factor` >= 1.6 ~ "Excellent",
+                                            between(`Condition factor`,1.4, 1.59) ~ "Good",
+                                            between(`Condition factor`,1.2, 1.39) ~ "Fair",
+                                            between(`Condition factor`,1.0, 1.19) ~ "Poor",
+                                            `Condition factor` <= 0.99 ~ "Extremely Poor"))
+  
+```
+
+## Weight, lengths and condition factor of sampled fish
+```{r}
+Data |> select(Weight, `Standard Length`, `Total length`, `Condition factor`) |> 
+  tbl_summary( 
+              type = everything() ~ "continuous2",
+              statistic = all_continuous2() ~ c("{mean}", "{min}", "{max}", "{sd}")) |> 
+  modify_header(label = "Variable", stat_0 = "Statistic")
+```
+
+## Prevalence of fish parasites as per county
+```{r}
+Data |> 
+  mutate(Total_parasitized = if_else(`Total Parasites` == 0, "No", "Yes")) |> 
+  select(Total_parasitized, County) |> 
+  tbl_summary(by = County,
+              type = Total_parasitized ~ "categorical") |> add_p()
+```
+
+## Prevalence of fish parasites as per fish ecosystem
+```{r}
+Data |> filter(County == "Taita Taveta") |> 
+  mutate(Total_parasitized = if_else(`Total Parasites` == 0, "No", "Yes")) |> 
+  select(Total_parasitized, Fish) |> 
+  tbl_summary(by = Fish,
+              type = Total_parasitized ~ "categorical") |> add_p()
+```
+
+## Prevalence of fish parasites as per culture system ecosystem
+```{r}
+Data |> 
+  mutate(Total_parasitized = if_else(`Total Parasites` == 0, "No", "Yes")) |> 
+  select(Total_parasitized, `Culture systems`) |> 
+  tbl_summary(by = `Culture systems`,
+              type = Total_parasitized ~ "categorical") |> add_p()
+```
+
+
+## Prevalence of fish parasites as per tilapia species in taveta
+```{r}
+Data |> filter(County == "Taita Taveta") |> 
+  mutate(Total_parasitized = if_else(`Total Parasites` == 0, "No", "Yes")) |> 
+  select(Total_parasitized, `Tilapia species`) |> 
+  tbl_summary(by = `Tilapia species`,
+              type = Total_parasitized ~ "categorical") |> add_p()
+```
+
+## ## Prevalence of fish parasites as per condition factor
+```{r}
+Data |> 
+  mutate(Total_parasitized = if_else(`Total Parasites` == 0, "No", "Yes")) |> 
+  select(Total_parasitized, Condition_factor) |> 
+  tbl_summary(by = Condition_factor,
+              type = Total_parasitized ~ "categorical") |> add_p()
+```
+
+## Prevalence of different fish parasites
+```{r}
+Data |> 
+  select(`Diplostomum species`:Camallanus) |> 
+  mutate_all(~if_else(. == 0, "No", "Yes")) |> 
+  tbl_summary() |> modify_header(label = "Parasitic Species", stat_0 = "Prevalence")
+```
+
+## Prevalence of different fish parasites as per body condition
+```{r}
+bind_cols(Data |> select(Condition_factor),
+          Data |> 
+  select(`Diplostomum species`:Camallanus) |> 
+  mutate_all(~if_else(. == 0, "No", "Yes"))) |> 
+  tbl_summary(by = Condition_factor,
+              percent = "row") |> 
+  modify_header(label = "Parasitic Species") |> add_p()
+```
+
+## Prevalence of different fish parasites as per County
+```{r}
+bind_cols(Data |> select(County),
+          Data |> 
+  select(`Diplostomum species`:Camallanus) |> 
+  mutate_all(~if_else(. == 0, "No", "Yes"))) |> 
+  tbl_summary(by = County,
+              percent = "row") |> 
+  modify_header(label = "Parasitic Species") |> add_p()
+```
+
+
+## Prevalence of different fish parasites as per culture system
+```{r}
+bind_cols(Data |> select(`Culture systems`),
+          Data |> 
+  select(`Diplostomum species`:Camallanus) |> 
+  mutate_all(~if_else(. == 0, "No", "Yes"))) |> 
+  tbl_summary(by = `Culture systems`,
+              percent = "row") |> 
+  modify_header(label = "Parasitic Species") |> add_p()
+```
+
+## Prevalence of different fish parasites as per ecosytem
+```{r}
+bind_cols(Data |> filter(County == "Taita Taveta") |> select(Fish),
+          Data |> filter(County == "Taita Taveta") |> 
+  select(`Diplostomum species`:Camallanus) |> 
+  mutate_all(~if_else(. == 0, "No", "Yes"))) |> 
+  tbl_summary(by = Fish,
+              percent = "row") |> 
+  modify_header(label = "Parasitic Species") |> add_p()
+```
+
+## Prevalence of different fish parasites as per tilapia species
+```{r}
+bind_cols(Data |> filter(County == "Taita Taveta") |> select(`Tilapia species`),
+          Data |> filter(County == "Taita Taveta") |> 
+  select(`Diplostomum species`:Camallanus) |> 
+  mutate_all(~if_else(. == 0, "No", "Yes"))) |> 
+  tbl_summary(by = `Tilapia species`,
+              percent = "row") |> 
+  modify_header(label = "Parasitic Species") |> add_p()
+```
+
+
+# Intensities
+
+## County
+```{r}
+Data |> 
+  select(`Diplostomum species`:Camallanus, County) |> 
+  pivot_longer(cols = `Diplostomum species`:Camallanus) |> 
+  filter(!value == 0) |> 
+  summarise(intensity = round(mean(value), 2),
+            sd = round(sd(value), 2),
+            .by = c(County, name)) |> 
+  unite(Intensity, c(intensity, sd), sep = "±") |> 
+  pivot_wider(names_from = County, values_from = Intensity) |> gt()
+```
+
+## Body condition
+```{r}
+Data |> 
+  select(`Diplostomum species`:Camallanus, Condition_factor) |> 
+  pivot_longer(cols = `Diplostomum species`:Camallanus) |> 
+  filter(!value == 0) |> 
+  summarise(intensity = round(mean(value), 2),
+            sd = round(sd(value), 2),
+            .by = c(Condition_factor, name)) |> 
+  unite(Intensity, c(intensity, sd), sep = "±") |> 
+  pivot_wider(names_from = Condition_factor, values_from = Intensity) |> gt()
+```
+
+## Tilpia Species
+```{r}
+Data |> filter(County == "Taita Taveta") |> 
+  select(`Diplostomum species`:Camallanus, `Tilapia species`) |> 
+  pivot_longer(cols = `Diplostomum species`:Camallanus) |> 
+  filter(!value == 0) |> 
+  summarise(intensity = round(mean(value), 2),
+            sd = round(sd(value), 2),
+            .by = c(`Tilapia species`, name)) |> 
+  unite(Intensity, c(intensity, sd), sep = "±") |> 
+  pivot_wider(names_from = `Tilapia species`, values_from = Intensity) |> gt()
+```
+
+## Culture System
+```{r}
+Data |> 
+  #filter(County == "Taita Taveta") |> 
+  select(`Diplostomum species`:Camallanus, `Culture systems`) |> 
+  pivot_longer(cols = `Diplostomum species`:Camallanus) |> 
+  filter(!value == 0) |> 
+  summarise(intensity = round(mean(value), 2),
+            sd = round(sd(value), 2),
+            .by = c(`Culture systems`, name)) |> 
+  unite(Intensity, c(intensity, sd), sep = "±") |> 
+  pivot_wider(names_from = `Culture systems`, values_from = Intensity) |> gt()
+```
+
+## Ecosystem
+```{r}
+Data |> 
+  filter(County == "Taita Taveta") |> 
+  select(`Diplostomum species`:Camallanus, Fish) |> 
+  pivot_longer(cols = `Diplostomum species`:Camallanus) |> 
+  filter(!value == 0) |> 
+  summarise(intensity = round(mean(value), 2),
+            sd = round(sd(value), 2),
+            .by = c(Fish, name)) |> 
+  unite(Intensity, c(intensity, sd), sep = "±") |> 
+  pivot_wider(names_from = Fish, values_from = Intensity) |> gt()
+```
+
+
+## County
+```{r}
+tbl_intensity <- function(group) {
+  Data |> select(`Diplostomum species`:Camallanus, {{group}}) |> 
+  pivot_longer(cols = `Diplostomum species`:Camallanus) |> 
+  filter(value > 0) |> 
+  summarise(intensity = mean(value),
+            .by = c(name, {{group}})) |> 
+  pivot_wider(names_from = name, values_from = intensity) |> 
+  tbl_summary(by = {{group}},
+              type = everything() ~ "continuous",
+              statistic = all_continuous() ~ "{mean}",
+              missing = "no") |> 
+  add_p()
+}
+
+tbl_intensity(County)
+
+```
+## Body Cndition
+```{r}
+tbl_intensity(Condition_factor)
+```
+
+## Culture systems
+```{r}
+tbl_intensity("Culture systems")
+```
+
+## Tilapia species
+```{r}
+Data <- Data |> filter(County == "Taita Taveta")
+tbl_intensity("Tilapia species")
+```
+
+## SPECIES ECOSYSTEM
+```{r}
+tbl_intensity(Fish)
+```
+

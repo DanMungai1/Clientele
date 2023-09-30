@@ -1,0 +1,246 @@
+---
+title: "Publication"
+author: "Mueke"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(gtsummary)
+farmers <- read_excel("farmers.xlsx") |> 
+   mutate(Age = case_when(Age == "option_2" ~ "36-50",
+                         Age == "36_50" ~ "36-50",
+                         Age == "_60" ~ "Above 60",
+                         Age == "18_35" ~ "18-35",
+                         Age == "51_60" ~ "51-60"),
+         Education_level = fct_relevel(Education_level, c("no_schooling", "primary_education",
+                                                          "secondary_education",
+                                                          "college_training__certificate__diploma",
+                                                          "bachelor_degree_and_above")),
+         Marital_status = fct_relevel(Marital_status, c("single","married", "windowed", "separated",
+                                                        "divorced")),
+         Household_income = case_when(Household_income == "_5000" ~ "Below 5000",
+                                      Household_income == "_20000" ~ "10000-20000",
+                                      Household_income == "10000_20000" ~ "10000-20000",
+                                      Household_income == "5000_10000" ~ "5000-10000"))
+
+biologicals <- read_excel("farmers.xlsx", 
+    sheet = "Sheet2")
+```
+
+## Social Demographics
+
+```{r}
+demographics <- farmers |> 
+  select(Age, Education_level, Marital_status, Household_income, Head_of_household,
+         farming_years) 
+demographics |> 
+  tbl_summary(statistic = farming_years ~ "{mean}",
+              missing = "no") |> 
+  modify_header(label = '**Social Demographics**',
+                stat_0 = 'Frequency') |> 
+  bold_labels()
+```
+
+## Biologicals Knowledge
+
+```{r}
+Knowledge <- bind_cols(farmers |> select(pesticide_purpose, fertilizer_purpose, knows_pesticeide_type, knows_pesticide_content, human_healthy_effects,
+                  animal_healthy_effects, environment_effects, crop_production_effects, mitigation) |> 
+  mutate(pesticide_purpose = case_when(str_detect(pesticide_purpose, "to_reduce_crop_loss|to_fulfil_market_demand") ~ "Sufficient",
+                                       .default = "Insufficient"),
+         fertilizer_purpose = case_when(str_detect(fertilizer_purpose, "to_improve_production") ~ "Sufficient",
+                                       .default = "Insufficient"),
+         knows_pesticeide_type = case_when(str_detect(knows_pesticeide_type, "yes") ~ "Sufficient",
+                                       .default = "Insufficient"),
+         knows_pesticide_content = case_when(str_detect(knows_pesticide_content, "yes") ~ "Sufficient",
+                                       .default = "Insufficient"),
+         human_healthy_effects = if_else(human_healthy_effects == "yes", "Sufficient", "Insufficient"),
+         animal_healthy_effects = if_else(animal_healthy_effects == "yes", "Sufficient", "Insufficient"),
+         environment_effects = if_else(environment_effects == "yes", "Sufficient", "Insufficient"),
+         crop_production_effects = if_else(crop_production_effects == "yes", "Sufficient", "Insufficient"),
+         human_healthy_effects = if_else(human_healthy_effects == "yes", "Sufficient", "Insufficient"),
+         mitigation = if_else(str_detect(mitigation, "i_do_nothing"), "Insufficient", "Sufficient")),
+  biologicals |> select(input_choice) |> 
+        mutate(input_choice = if_else(str_detect(input_choice, "biologicals"), "Sufficient", "Insufficient")))
+
+Knowledge |> tbl_summary(missing = "no") |> 
+  modify_header(label = "Knowledge Statement", stat_0 = "Knowledge Prevalence")
+```
+
+### Knowledge scores
+```{r}
+Know_scores <- Knowledge |> 
+  mutate_all(~if_else(. == "Sufficient", 1, 0)) |> 
+  rowwise() |> 
+  mutate(Knowledge_score = sum(c_across(1:10), na.rm = T),
+         Knowledge_level = if_else(Knowledge_score >= 5, "Sufficient", "Insufficient")) |> 
+  select(11,12)
+  
+```
+
+## Biologicals Attitude
+
+```{r}
+Attitude <- biologicals |> select(biologicals_advantageous:recommend_biologicals) |> 
+  mutate_at(.vars = c("Biologicals_increase_yield_of_crops", "Biologicals_increase_incomes",
+                      "biologicals_advantageous", "Biologicals_can_produce_healthy_food",
+                      "recommend_biologicals", "government_support_biologicals"),
+            ~ if_else(str_detect(., "agree|strongly_agree"),"Preferrable", "Unpreferrable")) |> 
+  mutate_at(.vars = c("Biologicals_risk_free", "biologicals_environmentally_safe",
+                      "biologicals_use_unconditional"),
+            ~if_else(str_detect(., "strongly_disagree|disagree"), "Preferrable", "Unpreferrable")) |> 
+  select("Biologicals_increase_yield_of_crops", "Biologicals_increase_incomes",
+         "biologicals_advantageous", "Biologicals_can_produce_healthy_food",
+         "recommend_biologicals", "government_support_biologicals","Biologicals_risk_free",
+         "biologicals_environmentally_safe",
+         "biologicals_use_unconditional")
+
+Attitude |> tbl_summary(missing = "no") |> 
+  modify_header(label = "Attitude Statement", stat_0 = "Attitude Prevalence")
+  
+```
+
+## Attitude scores
+```{r}
+Att_scores <- Attitude |> mutate_all(~if_else(. == "Preferrable", 1, 0)) |> 
+  rowwise() |> 
+  mutate(Attitude_score = sum(c_across(1:9), na.rm = T),
+         Attitude_level = if_else(Attitude_score >= 4.5, "Preferrable", "Unpreferrable")) |> 
+  select(10,11)
+```
+
+## Biologivals Practices
+
+```{r}
+Practices <- bind_cols(farmers |> select(usse_agricultural_inputs, agricultural_input, bought_safer_pesticide) |> 
+  mutate(usse_agricultural_inputs = if_else(usse_agricultural_inputs == "yes", "Valid", "Invalid"),
+         agricultural_input = if_else(str_detect(agricultural_input, "none|caco3|compost"), "Invalid", "Valid"),
+         bought_safer_pesticide = if_else(bought_safer_pesticide == "yes", "Valid", "Invalid")),
+  biologicals |> select(specific_names, use_biologicals,used_biologicals_last_farming_season,biologicals_use_frequency) |> 
+  mutate(specific_names = if_else(str_detect(specific_names, "not_applicable"), "Invalid", "Valid"),
+         used_biologicals_last_farming_season = if_else(used_biologicals_last_farming_season == "yes", "Valid", "Invalid"),
+         use_biologicals = if_else(use_biologicals == "yes", "Valid", "Invalid"),
+         biologicals_use_frequency = if_else(str_detect(biologicals_use_frequency, "every_season|some_seasons"), "Valid", "Invalid")) |> 
+  rename(Biological_use_times = specific_names))
+
+Practices |> tbl_summary(missing = "no") |> 
+  modify_header(label = "Practices Statement", stat_0 = "Practices Prevalence")
+```
+
+## Practices scores
+```{r}
+pract_scores <- Practices |> mutate_all(~if_else(. == "Valid", 1, 0)) |> 
+  rowwise() |> 
+  mutate(Practices_score = sum(c_across(1:7), na.rm = T),
+         Practices_level = if_else(Practices_score >= 3.5, "Invalid", "Valid")) |> 
+  select(8,9)
+```
+
+## KAP
+```{r}
+KAP <- bind_cols(demographics,
+          Know_scores,
+          Att_scores,
+          pract_scores)
+
+KAP
+```
+
+## Know
+```{r}
+KAP |> select(Knowledge_level) |> 
+  tbl_summary()
+```
+
+## Attitude
+```{r}
+KAP |> select(Attitude_level) |> 
+  tbl_summary()
+```
+
+## Practices
+```{r}
+KAP |> select(Practices_level) |> 
+  tbl_summary()
+```
+
+## Association between Knowledge and social demographics
+```{r}
+KAP |> 
+  select(1:6,8) |> 
+  tbl_summary(by = Knowledge_level, missing = "no", 
+              statistic = farming_years ~ "{mean} ({sd})") |> 
+  add_p(test = all_categorical() ~ "chisq.test")
+```
+
+## Association between practices and social demographics
+```{r}
+KAP |> 
+  select(1:6,Practices_level) |> 
+  tbl_summary(by = Practices_level, missing = "no", 
+              statistic = farming_years ~ "{mean} ({sd})") |> 
+  add_p(test = all_categorical() ~ "chisq.test")
+```
+
+
+## Association between attitude and social demographics
+```{r}
+KAP |> 
+  select(1:6,Attitude_level) |> 
+  tbl_summary(by = Attitude_level, missing = "no", 
+              statistic = farming_years ~ "{mean} ({sd})") |> 
+  add_p(test = all_categorical() ~ "chisq.test")
+```
+
+
+## Knowledge Regression
+```{r}
+Model_data <- KAP |> 
+  mutate(Knowledge_level = if_else(Knowledge_level== "Sufficient" , 1,0),
+         Attitude_level = if_else(Attitude_level == "Preferrable", 1, 0),
+         Practices_level = if_else(Practices_level == "Valid", 1, 0))
+model <- glm(Knowledge_level ~ Age + Education_level + Marital_status + Household_income + farming_years, data = Model_data,
+             family = binomial(link = "logit"))
+
+model |> tbl_regression()
+
+```
+
+## Attitude Regression
+```{r}
+model_1 <- glm(Attitude_level ~ Age + Education_level + Marital_status + Household_income + farming_years, data = Model_data,
+             family = binomial(link = "logit"))
+
+model_1 |> tbl_regression()
+```
+
+## Practices Regression
+```{r}
+model_2 <- glm(Practices_level ~ Age + Education_level + Marital_status + Household_income + farming_years, data = Model_data,
+             family = binomial(link = "logit"))
+
+model_2 |> tbl_regression()
+```
+
+## Correlation
+```{r}
+corrdata <- KAP |> select(Knowledge_score, Attitude_score, Practices_score)
+
+library(GGally)
+library(corrr)
+
+ggcorr(corrdata, label = T)
+
+corrdata |> correlate() |> gt()
+```
+
+
