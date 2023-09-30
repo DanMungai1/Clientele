@@ -1,0 +1,42 @@
+---
+title: "Gambling Motivational Factors"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gtsummary)
+library(gt)
+motivation <- read_excel("motivation.xlsx")
+```
+
+## Motivation factors
+
+```{r}
+motivation |> select(4:11) |> 
+  tbl_summary()
+```
+
+## Motivation Factors Across Genders
+
+```{r}
+motivation |> select(1, 4:11) |> 
+  tbl_summary(by = "Gender of respondents") |> 
+  add_p(test = everything() ~ "chisq.test") |> as_gt()
+```
+
+## Motivation Factors Across  Age
+
+```{r}
+motivation |> select(2, 4:11) |> 
+  tbl_summary(by = "Age of respodents") |> 
+  add_p() |> as_gt()
+```
+
