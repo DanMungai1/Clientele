@@ -1,0 +1,59 @@
+---
+title: "Pilot Data Analysis"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false 
+---
+
+```{r}
+library(readxl)
+library(psych)
+library(tidyverse)
+library(gtsummary)
+Anxiety_clean <- read_excel("Anxiety_clean.xlsx")
+Anxiety <- read_excel("Anxiety.xlsx")
+
+```
+
+## Factor analysis
+### Anxiety
+```{r}
+anxiety <- Anxiety |> select(GAD1:GAD7) %>% 
+  mutate_all(~case_when(. == "Not at all" ~ 0,
+                        . == "Several days" ~ 1,
+                        . == "More than half the days" ~ 2,
+                        . == "Nearly every day" ~ 3))
+fa(anxiety)
+psych::alpha(anxiety)
+splitHalf(anxiety)
+```
+
+## Precipitating factors
+```{r}
+PGAD <- Anxiety_clean |> select(Uncertainty:`no income`)
+
+fa(PGAD, check.keys=TRUE)
+psych::alpha(PGAD, check.keys=TRUE)
+splitHalf(PGAD, check.keys=TRUE)
+```
+
+## Couselling
+```{r}
+CBI <- Anxiety_clean |> select(`Individual counselling`:`job opportunities`)
+
+fa(CBI, check.keys=TRUE)
+psych::alpha(CBI, check.keys=TRUE)
+splitHalf(CBI, check.keys=TRUE)
+
+```
+
+```{r}
+Anxiety_clean |> 
+  select(Age:Nationality, GAD_LEVEL) |> 
+  tbl_summary(by = GAD_LEVEL, percent = "row")
+```
+

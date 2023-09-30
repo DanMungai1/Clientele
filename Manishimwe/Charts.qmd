@@ -1,0 +1,286 @@
+---
+title: "ASSESSMENT OF GENERALIZED ANXIETY DISORDER AND COMMUNITY-BASED INTERVENTIONS"
+author: "Manishiwe"
+format: docx
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: false
+  warning: false
+fig-width: 9
+fig-height: 6
+fig-dpi: 90
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gt)
+library(gtsummary)
+library(showtext)
+library(RColorBrewer)
+library(glue)
+library(webr)
+font_add_google(name = "Noto Serif", family = "Noto serif")
+showtext_auto()
+Anxiety <- read_excel("Anxiety.xlsx") %>% 
+  mutate(`Marital status` = fct_relevel(`Marital status`, c("Single", "Married", 
+                                                            "Widowed", "Single mother")))
+
+Anxiety_clean <- read_excel("Anxiety_clean.xlsx")
+library(ggpubr)
+```
+
+# Social Demographics
+
+## Age
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+Anxiety %>% count(Age) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  ggplot(aes(Age, percent)) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(y = "Respondents") +
+  scale_y_continuous(breaks = seq(0, 1, 0.05), labels = scales::percent_format())
+```
+
+## Gender
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+Anxiety %>% count(Gender) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  ggplot(aes(Gender, percent)) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(y = "Respondents") +
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+## Marital Status
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+Anxiety %>% count(`Marital status`) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  ggplot(aes(`Marital status`, percent)) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(y = "Respondents") +
+  scale_y_continuous(breaks = seq(0,1,0.09),labels = scales::percent_format())
+```
+
+## Level of education
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+Anxiety %>% count(`Education Level`) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  ggplot(aes(`Education Level`, percent)) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(y = "Respondents") +
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+## Occupation
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+Anxiety %>% count(Occupation) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  ggplot(aes(percent, fct_reorder(Occupation, percent))) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(x = "Respondents", y = NULL) +
+  scale_x_continuous(breaks = seq(0,1, 0.1), labels = scales::percent_format())
+```
+
+## Residence
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+Anxiety %>% count(`Residence period`) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  ggplot(aes(`Residence period`,percent)) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(y = "Respondents") +
+  scale_y_continuous(breaks = seq(0, 1, 0.1), labels = scales::percent_format())
+```
+
+## Nationality
+
+```{r}
+#| fig-width: 11
+#| fig-height: 7
+Anxiety %>% count(Nationality) %>% 
+  mutate(percent = n/sum(n)) %>%
+  ggplot(aes(percent, fct_reorder(Nationality, percent))) + geom_bar(stat = "identity") +
+  theme_classic(base_size = 22, base_family = "Noto serif") +
+  labs(x = "Respondents", y = NULL) +
+  scale_x_continuous(breaks = seq(0, 1, 0.10), labels = scales::percent_format())
+```
+
+
+# Anxiety
+
+```{r}
+GAD <- bind_cols(Anxiety %>% select(1:7),
+          Anxiety %>% 
+  select(GAD1:GAD7) %>% 
+  mutate_all(~case_when(. == "Not at all" ~ 0,
+                        . == "Several days" ~ 1,
+                        . == "More than half the days" ~ 2,
+                        . == "Nearly every day" ~ 3)) %>% 
+  rowwise() %>% 
+  mutate(GAD_SCORE = sum(c_across(GAD1:GAD7), na.rm = T)) %>% ungroup() %>% 
+  mutate(GAD_LEVEL = case_when(between(GAD_SCORE, 0, 4) ~ "Minimal Anxiety",
+                               between(GAD_SCORE, 5, 9) ~ "Mild Anxiety",
+                               between(GAD_SCORE, 10, 14) ~ "Moderate Anxiety",
+                               between(GAD_SCORE, 15, 21) ~ "Severe Anxiety")) %>% 
+  select(GAD_SCORE, GAD_LEVEL))%>% 
+  mutate(GAD_LEVEL = fct_relevel(GAD_LEVEL, c("Minimal Anxiety", "Mild Anxiety",
+                                              "Moderate Anxiety", "Severe Anxiety"))) 
+```
+
+# Pie charts
+
+### Age
+
+```{r}
+
+Age <- GAD %>% count(Age) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{Age}: {percent}%"))
+
+pie(x = Age$percent, labels = Age$label, family = "Noto serif")
+```
+
+### Gender
+
+```{r}
+
+Gender <- GAD %>% count(Gender) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{Gender}: {percent}%"))
+
+pie(x = Gender$percent, labels = Gender$label, family = "Noto serif")
+```
+
+### Marital Status
+
+```{r}
+
+Marital <- GAD %>% count(`Marital status`) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{`Marital status`}: {percent}%"))
+
+pie(x = Marital$percent, labels = Marital$label, family = "Noto serif")
+```
+
+### Education Level
+
+```{r}
+
+Educ <- GAD %>% count(`Education Level`) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{`Education Level`}: {percent}%"))
+
+pie(x = Educ$percent, labels = Educ$label, family = "Noto serif")
+```
+
+### Occupation
+
+```{r}
+
+Occ <- GAD %>% count(Occupation) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{Occupation}: {percent}%"))
+
+pie(x = Occ$percent, labels = Occ$label, family = "Noto serif")
+```
+
+### Residence period
+
+```{r}
+
+Res <- GAD %>% count(`Residence period`) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{`Residence period`}: {percent}%"))
+
+pie(x = Res$percent, labels = Res$label, family = "Noto serif")
+```
+
+### Nationality
+
+```{r}
+
+Nat <- GAD %>% count(Nationality) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{Nationality}: {percent}%"))
+
+pie(x = Nat$percent, labels = Nat$label, family = "Noto serif")
+```
+
+### Anxiety
+
+```{r}
+
+Anx <- GAD %>% count(GAD_LEVEL) %>% 
+  mutate(percent = round(n/sum(n)*100),
+         label = glue("{GAD_LEVEL}: {percent}%"))
+
+pie(x = Anx$percent, labels = Anx$label, family = "Noto serif",
+    col = brewer.pal(4, "Pastel1"))
+```
+
+## piedonut
+
+## Anxiety Vs Gender
+```{r}
+
+GAD |> 
+  PieDonut(aes(Gender, GAD_LEVEL), family = "Noto serif")
+```
+
+## Anxiety Vs Age
+```{r}
+
+GAD |> 
+  PieDonut(aes(Age, GAD_LEVEL), family = "Noto serif")
+```
+
+
+## Anxiety Vs Marital status
+```{r}
+
+GAD |> janitor::clean_names() |> 
+  PieDonut(aes(marital_status, gad_level), family = "Noto serif")
+```
+
+
+## Anxiety Vs Education Level
+```{r}
+
+GAD |> janitor::clean_names() |> 
+  PieDonut(aes(education_level, gad_level), family = "Noto serif")
+```
+
+
+## Anxiety Vs occupation
+```{r}
+
+GAD |> janitor::clean_names() |> 
+  PieDonut(aes(occupation, gad_level), family = "Noto serif")
+```
+
+## Anxiety Vs residence period
+```{r}
+
+GAD |> janitor::clean_names() |> 
+  PieDonut(aes(residence_period, gad_level), family = "Noto serif")
+```
